@@ -840,6 +840,7 @@ Add your Anthropic API key to enable live AI responses. Select a task on the lef
 // CONFIG
 // ════════════════════════════════════════════
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQY9kp0fTG-Fk3P5sQfg69dg0wPHofdLRwGY4QDPxu-Od3SNarQo3fexJpguwdGFNNFbbhyD8TaxNec/pub?gid=0&single=true&output=csv';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAoqtUnGI5LaOtB6ggH12Z9EVOf_mvXJ71aJiU070EwvDplG76kkTNsZe6drPXdebU/exec';
 
 // Column order must match the CSV headers exactly
 const COLS = {
@@ -1145,7 +1146,7 @@ function renderDrawer() {
   // Fields pane
   const hasPending = Object.keys(pendingEdits).length > 0;
   document.getElementById('dt-fields').innerHTML = `
-    ${hasPending ? `<div class="unsaved">Unsaved changes — these update locally only. To save permanently, also update your Google Sheet.<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="applyEdits()">Apply Locally</button></div></div>` : ''}
+    ${hasPending ? `<div class="unsaved">Unsaved changes<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="saveEdits()">Save to Sheet ↗</button></div></div>` : ''}
     <div class="sec-title">DEAL OVERVIEW</div>
     <div class="f-grid">
       ${fld('stage','Stage','select',d.stage,['Prospect','Reach-out','Active Discussion','Monitor','Closed','Passed On'])}
@@ -1175,7 +1176,7 @@ function renderDrawer() {
     <div class="sec-title">NEXT STEPS</div>
     ${fld('nextSteps','','textarea',d.nextSteps)}
     <div style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--gray400)">
-      ⓘ Edits here update your local session. To save permanently, update the Google Sheet and click ↻ Refresh.
+      ⓘ Changes save directly to Google Sheet when you click Save to Sheet ↗
     </div>`;
 
   // Docs pane
@@ -1240,36 +1241,80 @@ function fld(key, label, type, value, opts) {
 
 function edit(key, val) {
   pendingEdits[key] = val;
-  // Show unsaved banner if not already there
   const pane = document.getElementById('dt-fields');
   if (!pane.querySelector('.unsaved')) {
     const div = document.createElement('div');
     div.className = 'unsaved';
-    div.innerHTML = `Unsaved changes — update Google Sheet to save permanently.<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="applyEdits()">Apply Locally</button></div>`;
+    div.innerHTML = `Unsaved changes<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="saveEdits()">Save to Sheet ↗</button></div>`;
     pane.insertBefore(div, pane.firstChild);
   }
 }
 
-function applyEdits() {
-  if (!sel) return;
+async function saveEdits() {
+  if (!sel || !Object.keys(pendingEdits).length) return;
+  const btn = document.querySelector('.save-btn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
+  // Apply locally first
   Object.assign(sel, pendingEdits);
-  // Also update in DEALS array
   const idx = DEALS.findIndex(d => d.id === sel.id);
   if (idx >= 0) Object.assign(DEALS[idx], pendingEdits);
-  pendingEdits = {};
-  updateKPIs();
-  buildPills();
-  filter();
 
-  const pane = document.getElementById('dt-fields');
-  const unsaved = pane.querySelector('.unsaved');
-  if (unsaved) unsaved.outerHTML = `<div class="saved-flash">✓ Applied locally — also update your Google Sheet to save permanently.</div>`;
-  setTimeout(() => { const f = pane.querySelector('.saved-flash'); if(f) f.remove(); }, 4000);
+  // Map field keys to exact Google Sheet column header names
+  const headerMap = {
+    company: 'Company Name', stage: 'Stage', gbu: 'GBU', fit: 'Strategic Fit',
+    rev: 'Revenue ($M)', ebitda: 'EBITDA ($M)', ebitdaPct: 'EBITDA %',
+    ownerType: 'Ownership Type', geo: 'Geography', industry: 'Industry/Segment',
+    owner: 'Deal Owner', keyContact: 'Key Contact', bankers: 'Bankers',
+    lastContact: 'Last Contact', nextFollowup: 'Next Follow-up',
+    actionable: 'Actionable', nextSteps: 'Next Steps',
+    valStatus: 'Val Status', ddStatus: 'DD Status', source: 'Deal Source',
+  };
+
+  // Convert pending edits keys to sheet header names
+  const sheetFields = {};
+  for (const [k, v] of Object.entries(pendingEdits)) {
+    const header = headerMap[k] || k;
+    sheetFields[header] = k === 'actionable' ? (v ? 'Yes' : 'No') : v;
+  }
+
+  try {
+    const rowIndex = (idx >= 0 ? idx : 0) + 2; // +2 for 1-based index + header row
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'update', rowIndex, fields: sheetFields }),
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'Save failed');
+
+    pendingEdits = {};
+    updateKPIs(); buildPills(); filter();
+    const pane = document.getElementById('dt-fields');
+    const unsaved = pane.querySelector('.unsaved');
+    if (unsaved) unsaved.outerHTML = `<div class="saved-flash">✓ Saved to Google Sheet</div>`;
+    setTimeout(() => { const f = pane.querySelector('.saved-flash'); if(f) f.remove(); }, 3000);
+  } catch(e) {
+    if (btn) { btn.textContent = 'Save to Sheet ↗'; btn.disabled = false; }
+    const pane = document.getElementById('dt-fields');
+    const unsaved = pane.querySelector('.unsaved');
+    if (unsaved) {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--red);padding:6px 0;';
+      errDiv.textContent = '✕ Save failed: ' + e.message;
+      unsaved.after(errDiv);
+      setTimeout(() => errDiv.remove(), 5000);
+    }
+    if (btn) { btn.textContent = 'Save to Sheet ↗'; btn.disabled = false; }
+  }
 }
 
 function discard() {
   pendingEdits = {};
+  // Revert local changes
+  const orig = DEALS.find(d => d.id === sel?.id);
+  if (orig && sel) Object.assign(sel, orig);
   renderDrawer();
+  filter();
 }
 
 // ════════════════════════════════════════════
@@ -1300,9 +1345,12 @@ function saveSpUrlQuick() {
 function openAdd() { document.getElementById('add-modal').classList.add('open'); }
 function closeAdd() { document.getElementById('add-modal').classList.remove('open'); }
 
-function addDeal() {
+async function addDeal() {
   const co = document.getElementById('an-co').value.trim();
   if (!co) { alert('Company name is required.'); return; }
+  const btn = document.querySelector('.am-submit');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
   const d = {
     id: 'local-' + Date.now(),
     company: co,
@@ -1322,10 +1370,37 @@ function addDeal() {
     bankers:'', lastContact:'', nextFollowup:'',
     actionable: false, valStatus:'Not Run', ddStatus:'Not Run', notionUrl:'',
   };
+
+  // Save to Google Sheet via Apps Script
+  try {
+    const sheetFields = {
+      'Company Name': d.company, 'Stage': d.stage, 'GBU': d.gbu,
+      'Strategic Fit': d.fit, 'Revenue ($M)': d.rev, 'EBITDA ($M)': d.ebitda,
+      'EBITDA %': '', 'Ownership Type': d.ownerType, 'Geography': d.geo,
+      'Industry/Segment': d.industry, 'Deal Owner': d.owner,
+      'Key Contact': d.keyContact, 'Bankers': '', 'Last Contact': '',
+      'Next Follow-up': '', 'Actionable': 'No', 'Next Steps': d.nextSteps,
+      'Val Status': 'Not Run', 'DD Status': 'Not Run',
+      'Deal Source': d.source, 'Notion URL': '',
+    };
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'append', fields: sheetFields }),
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'Append failed');
+  } catch(e) {
+    console.warn('Could not save to sheet:', e.message);
+    // Still add locally even if sheet save fails
+  }
+
   DEALS.unshift(d);
   renderAll();
   closeAdd();
-  ['an-co','an-geo','an-rev','an-ebitda','an-owner','an-contact','an-ind','an-steps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  if (btn) { btn.textContent = 'Add to Pipeline'; btn.disabled = false; }
+  ['an-co','an-geo','an-rev','an-ebitda','an-owner','an-contact','an-ind','an-steps'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
 }
 
 // ════════════════════════════════════════════
