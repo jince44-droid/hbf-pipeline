@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H.B. Fuller — M&A Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f35;--navy2:#162b47;--navy3:#1e3a5f;
+  --accent:#2563eb;--accent2:#1d4ed8;--accent-bg:#eff6ff;--accent-mid:#bfdbfe;
+  --gold:#92700a;--gold-bg:#fefce8;--gold-mid:#fde68a;
+  --green:#15803d;--green-bg:#f0fdf4;--green-mid:#bbf7d0;
+  --orange:#c2410c;--orange-bg:#fff7ed;--orange-mid:#fed7aa;
+  --red:#b91c1c;--red-bg:#fef2f2;--red-mid:#fecaca;
+  --teal:#0f766e;--teal-bg:#f0fdfa;--teal-mid:#99f6e4;
+  --purple:#6d28d9;--purple-bg:#f5f3ff;
+  --gray50:#f9fafb;--gray100:#f3f4f6;--gray200:#e5e7eb;
+  --gray300:#d1d5db;--gray400:#9ca3af;--gray500:#6b7280;
+  --gray600:#4b5563;--gray700:#374151;--gray800:#1f2937;
+  --bg:#eef2f7;--surface:#ffffff;--border:#e2e8f0;
+  --mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;
+  --r:6px;--rl:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.13),0 2px 6px rgba(0,0,0,.06);
+}
+html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--gray800);font-size:14px}
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:var(--navy);height:54px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid rgba(255,255,255,.06);
+  gap:16px;
+}
+.tb-brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.tb-logo{
+  width:32px;height:32px;background:var(--accent);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:500;color:#fff;letter-spacing:-.5px;
+  flex-shrink:0;
+}
+.tb-title{font-size:13px;font-weight:500;color:#e2e8f0;white-space:nowrap}
+.tb-sub{font-size:10px;color:#5a7a96;font-family:var(--mono);margin-top:1px}
+.tb-nav{display:flex;gap:1px;flex-shrink:0}
+.tb-btn{
+  font-family:var(--mono);font-size:11px;color:#7a9ab8;
+  background:none;border:none;cursor:pointer;
+  padding:6px 13px;border-radius:var(--r);letter-spacing:.04em;
+  transition:all .15s;white-space:nowrap;
+}
+.tb-btn:hover{color:#e2e8f0;background:rgba(255,255,255,.07)}
+.tb-btn.active{color:#e2e8f0;background:rgba(255,255,255,.11)}
+.tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-field{display:flex;align-items:center;gap:5px}
+.tb-field label{font-family:var(--mono);font-size:9px;color:#4a6880;white-space:nowrap}
+.tb-inp{
+  height:26px;font-family:var(--mono);font-size:10px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r);color:#e2e8f0;padding:0 8px;
+  transition:border-color .15s;
+}
+.tb-inp:focus{outline:none;border-color:var(--accent)}
+.tb-inp::placeholder{color:#2d4a62}
+.tb-inp.wide{width:200px}
+.sync-status{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:#22c55e}
+.dot-load{background:#f59e0b}
+.dot-err{background:#ef4444}
+.dot-off{background:var(--gray500)}
+.sync-btn{
+  height:26px;padding:0 11px;font-family:var(--mono);font-size:10px;
+  background:var(--accent);color:#fff;border:none;border-radius:var(--r);
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.sync-btn:hover{background:var(--accent2)}
+.sync-btn:disabled{opacity:.5;cursor:wait}
+
+/* ── LAYOUT ── */
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{
+  width:208px;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;
+}
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.panel.active{display:flex}
+
+/* ── SIDEBAR ── */
+.sb-sec{padding:13px 12px 6px}
+.sb-lbl{font-family:var(--mono);font-size:9px;color:var(--gray400);letter-spacing:.08em;margin-bottom:7px}
+.sb-f{margin-bottom:6px}
+.sb-f label{font-family:var(--mono);font-size:9px;color:var(--gray600);display:block;margin-bottom:3px}
+.sb-f input,.sb-f select{
+  width:100%;height:28px;padding:0 8px;
+  font-family:var(--mono);font-size:11px;
+  border:1px solid var(--border);border-radius:var(--r);
+  background:var(--gray50);color:var(--gray800);
+  transition:border-color .15s;
+}
+.sb-f input:focus,.sb-f select:focus{outline:none;border-color:var(--accent)}
+.sb-div{height:1px;background:var(--border);margin:6px 0}
+.kpi-wrap{padding:10px 11px;display:flex;flex-direction:column;gap:6px}
+.kpi{background:var(--gray50);border:1px solid var(--border);border-radius:var(--r);padding:9px 10px}
+.kpi.blue{border-color:var(--accent-mid);background:var(--accent-bg)}
+.kpi.gold{border-color:var(--gold-mid);background:var(--gold-bg)}
+.kpi.green{border-color:var(--green-mid);background:var(--green-bg)}
+.kpi.orange{border-color:var(--orange-mid);background:var(--orange-bg)}
+.kpi-l{font-family:var(--mono);font-size:9px;color:var(--gray400);letter-spacing:.05em}
+.kpi-v{font-size:22px;font-weight:300;line-height:1.1;margin-top:2px}
+.kpi-v.blue{color:var(--accent)}
+.kpi-v.gold{color:var(--gold)}
+.kpi-v.green{color:var(--green)}
+.kpi-v.orange{color:var(--orange)}
+.kpi-s{font-family:var(--mono);font-size:9px;color:var(--gray400);margin-top:1px}
+
+/* ── PIPELINE ── */
+.pipe-bar{
+  padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;
+}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pill{
+  font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:20px;
+  border:1px solid transparent;cursor:pointer;transition:all .15s;
+  letter-spacing:.02em;font-weight:500;white-space:nowrap;
+}
+.p-all{background:var(--gray100);color:var(--gray600);border-color:var(--gray200)}
+.p-all.on,.p-all:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.p-disc{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-mid)}
+.p-disc.on,.p-disc:hover{background:var(--orange);color:#fff;border-color:var(--orange)}
+.p-pros{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-mid)}
+.p-pros.on,.p-pros:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.p-rout{background:var(--green-bg);color:var(--green);border-color:var(--green-mid)}
+.p-rout.on,.p-rout:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.p-mon{background:var(--gray100);color:var(--gray600);border-color:var(--gray200)}
+.p-mon.on,.p-mon:hover{background:var(--gray600);color:#fff;border-color:var(--gray600)}
+.p-cls{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-mid)}
+.p-cls.on,.p-cls:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.p-pass{background:var(--red-bg);color:var(--red);border-color:var(--red-mid)}
+.p-pass.on,.p-pass:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.pipe-right{display:flex;align-items:center;gap:8px}
+.cnt{font-family:var(--mono);font-size:10px;color:var(--gray400);white-space:nowrap}
+.add-btn{
+  height:28px;padding:0 12px;font-family:var(--mono);font-size:10px;
+  background:var(--navy);color:#e2e8f0;border:none;border-radius:var(--r);
+  cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:4px;
+}
+.add-btn:hover{background:var(--navy3)}
+.ref-btn{
+  height:28px;padding:0 10px;font-family:var(--mono);font-size:11px;
+  background:none;color:var(--gray500);border:1px solid var(--border);
+  border-radius:var(--r);cursor:pointer;transition:all .15s;
+}
+.ref-btn:hover{border-color:var(--accent);color:var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+
+/* ── TABLE ── */
+.tbl-wrap{flex:1;overflow:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:12px}
+table.dt thead th{
+  position:sticky;top:0;z-index:10;
+  background:var(--navy);color:#8aaec8;
+  font-family:var(--mono);font-size:9px;font-weight:500;
+  padding:9px 13px;text-align:left;white-space:nowrap;
+  letter-spacing:.05em;border-right:1px solid rgba(255,255,255,.05);
+  cursor:pointer;user-select:none;
+}
+table.dt thead th:hover{color:#e2e8f0}
+table.dt thead th.sa::after{content:' ↑';color:#60a5fa}
+table.dt thead th.sd::after{content:' ↓';color:#60a5fa}
+table.dt tbody tr{border-bottom:1px solid var(--gray100);cursor:pointer;transition:background .08s}
+table.dt tbody tr:hover{background:var(--accent-bg)}
+table.dt tbody tr.sel{background:#dbeafe}
+table.dt tbody td{padding:8px 13px;vertical-align:middle;border-right:1px solid var(--gray100)}
+table.dt tbody td:last-child{border-right:none}
+.co-name{font-weight:500;color:var(--navy);font-size:12px}
+.co-sub{font-family:var(--mono);font-size:10px;color:var(--gray400);margin-top:1px}
+.sbadge{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.s-Prospect{background:var(--accent-bg);color:var(--accent)}
+.s-Reach-out{background:var(--green-bg);color:var(--green)}
+.s-Active{background:var(--orange-bg);color:var(--orange)}
+.s-Monitor{background:var(--gray100);color:var(--gray600)}
+.s-Closed{background:var(--teal-bg);color:var(--teal)}
+.s-Passed{background:var(--red-bg);color:var(--red)}
+.stars{letter-spacing:-1px;font-size:11px}
+.gtag{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;font-weight:500}
+.g-EA{background:#dbeafe;color:#1e40af}
+.g-HHC{background:#ede9fe;color:#4c1d95}
+.g-BAS{background:var(--green-bg);color:#14532d}
+.num{font-family:var(--mono);font-size:11px;text-align:right;color:var(--gray700)}
+.y{color:var(--green);font-family:var(--mono);font-size:10px;font-weight:500}
+.n{color:var(--gray300);font-family:var(--mono);font-size:10px}
+.step-txt{font-size:11px;color:var(--gray600);max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-btn{
+  display:inline-flex;align-items:center;gap:3px;
+  font-family:var(--mono);font-size:9px;color:var(--accent);
+  text-decoration:none;padding:2px 6px;border-radius:3px;
+  border:1px solid var(--accent-mid);transition:all .15s;white-space:nowrap;
+}
+.sp-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.empty-td{text-align:center;padding:60px 20px;color:var(--gray400);font-family:var(--mono);font-size:11px}
+
+/* ── DRAWER ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.22);z-index:40;display:none}
+.overlay.open{display:block}
+.drawer{
+  position:fixed;right:0;top:0;bottom:0;width:490px;
+  background:var(--surface);border-left:1px solid var(--border);
+  box-shadow:var(--shadow-lg);z-index:50;
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.drawer.open{transform:translateX(0)}
+.dr-head{background:var(--navy);padding:16px 18px 14px;flex-shrink:0;position:relative}
+.dr-co{font-size:15px;font-weight:500;color:#e8eef5;margin-bottom:6px;padding-right:30px}
+.dr-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dr-close{
+  position:absolute;right:14px;top:14px;width:26px;height:26px;
+  border-radius:50%;background:rgba(255,255,255,.1);border:none;
+  color:#94b4cc;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.dr-close:hover{background:rgba(255,255,255,.2);color:#fff}
+.dr-tabs{display:flex;background:var(--navy2);border-bottom:1px solid rgba(255,255,255,.07)}
+.dr-tab{
+  font-family:var(--mono);font-size:10px;color:#5a7a96;
+  padding:8px 15px;cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;
+  letter-spacing:.03em;
+}
+.dr-tab:hover{color:#e2e8f0}
+.dr-tab.on{color:#e2e8f0;border-bottom-color:var(--accent)}
+.dr-body{flex:1;overflow-y:auto}
+.dr-pane{display:none;padding:16px 18px}
+.dr-pane.on{display:block}
+
+/* Fields */
+.sec-title{
+  font-family:var(--mono);font-size:9px;color:var(--gray400);
+  letter-spacing:.07em;margin-bottom:10px;padding-bottom:5px;
+  border-bottom:1px solid var(--gray100);
+}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.f-row{margin-bottom:10px}
+.f-lbl{
+  font-family:var(--mono);font-size:9px;color:var(--gray400);
+  letter-spacing:.05em;margin-bottom:3px;display:flex;align-items:center;gap:4px;
+}
+.fit-info{cursor:pointer;color:var(--accent);font-size:11px;line-height:1}
+.f-inp,.f-sel,.f-ta{
+  width:100%;font-family:var(--sans);font-size:12px;
+  padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--gray50);color:var(--gray800);transition:all .15s;
+}
+.f-inp:focus,.f-sel:focus,.f-ta:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.f-ta{resize:vertical;min-height:72px;line-height:1.5}
+.unsaved{
+  background:var(--orange-bg);border:1px solid var(--orange-mid);
+  border-radius:var(--r);padding:8px 12px;margin-bottom:12px;
+  font-family:var(--mono);font-size:10px;color:var(--orange);
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+}
+.unsaved-btns{display:flex;gap:6px;flex-shrink:0}
+.save-btn{
+  height:26px;padding:0 12px;font-family:var(--mono);font-size:10px;
+  background:var(--accent);color:#fff;border:none;border-radius:var(--r);cursor:pointer;
+}
+.save-btn:hover{background:var(--accent2)}
+.discard-btn{
+  height:26px;padding:0 10px;font-family:var(--mono);font-size:10px;
+  background:none;color:var(--orange);border:1px solid var(--orange-mid);
+  border-radius:var(--r);cursor:pointer;
+}
+.saved-flash{
+  background:var(--green-bg);border:1px solid var(--green-mid);
+  border-radius:var(--r);padding:7px 12px;margin-bottom:12px;
+  font-family:var(--mono);font-size:10px;color:var(--green);
+}
+
+/* Docs pane */
+.sp-hero{
+  display:flex;align-items:center;gap:10px;padding:14px;
+  background:var(--navy);border-radius:var(--rl);margin-bottom:14px;
+  text-decoration:none;transition:background .15s;
+}
+.sp-hero:hover{background:var(--navy3)}
+.sp-hero-icon{font-size:22px;flex-shrink:0}
+.sp-hero-title{font-size:13px;font-weight:500;color:#e8eef5}
+.sp-hero-sub{font-family:var(--mono);font-size:10px;color:#6a90b0;margin-top:2px}
+.sp-info{
+  background:var(--accent-bg);border:1px solid var(--accent-mid);
+  border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--navy);
+  line-height:1.6;margin-bottom:14px;
+}
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.doc-card{border:1px solid var(--border);border-radius:var(--r);padding:10px 11px;background:var(--gray50)}
+.doc-icon{font-size:16px;margin-bottom:5px}
+.doc-title{font-size:11px;font-weight:500;color:var(--gray800);margin-bottom:2px}
+.doc-desc{font-size:10px;color:var(--gray500);font-family:var(--mono);line-height:1.4}
+.sp-setup{
+  background:var(--gray50);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px;margin-top:12px;
+}
+.sp-setup p{font-size:11px;color:var(--gray600);line-height:1.6;margin-bottom:8px}
+.sp-setup label{font-family:var(--mono);font-size:9px;color:var(--gray500);display:block;margin-bottom:4px}
+.sp-setup input{
+  width:100%;height:28px;font-family:var(--mono);font-size:11px;
+  padding:0 8px;border:1px solid var(--border);border-radius:var(--r);
+  background:#fff;color:var(--gray800);
+}
+.sp-setup input:focus{outline:none;border-color:var(--accent)}
+.sp-save-url{
+  margin-top:8px;height:28px;padding:0 14px;
+  font-family:var(--mono);font-size:10px;
+  background:var(--navy);color:#e2e8f0;border:none;border-radius:var(--r);cursor:pointer;
+}
+
+/* Agent quick actions */
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.qa{
+  font-family:var(--mono);font-size:10px;padding:9px 10px;
+  border:1px solid var(--border);border-radius:var(--r);
+  background:var(--gray50);color:var(--gray800);cursor:pointer;
+  text-align:left;transition:all .15s;display:flex;align-items:flex-start;gap:6px;
+}
+.qa:hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+.qa-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.qa-title{font-weight:500;margin-bottom:1px;font-size:10px}
+.qa-sub{color:var(--gray400);font-size:9px}
+
+/* FIT MODAL */
+.fit-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center}
+.fit-modal.open{display:flex}
+.fm-bg{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+.fm-box{
+  position:relative;z-index:1;background:var(--surface);
+  border-radius:var(--rl);box-shadow:var(--shadow-lg);
+  padding:24px;width:560px;max-height:82vh;overflow-y:auto;
+}
+.fm-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:3px}
+.fm-sub{font-family:var(--mono);font-size:10px;color:var(--gray400);margin-bottom:18px}
+.fm-row{margin-bottom:13px;padding-bottom:13px;border-bottom:1px solid var(--gray100)}
+.fm-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.fm-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.fm-stars{font-size:14px;letter-spacing:-1px}
+.fm-label{font-size:12px;font-weight:500;color:var(--gray800)}
+.fm-crit{font-size:11px;color:var(--gray600);line-height:1.7;font-family:var(--mono)}
+.fm-crit li{margin-left:14px;margin-bottom:2px}
+.fm-close{
+  position:absolute;right:16px;top:16px;width:28px;height:28px;
+  border-radius:50%;background:var(--gray100);border:none;cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.fm-close:hover{background:var(--gray200)}
+
+/* ADD MODAL */
+.add-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center}
+.add-modal.open{display:flex}
+.am-bg{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+.am-box{
+  position:relative;z-index:1;background:var(--surface);
+  border-radius:var(--rl);box-shadow:var(--shadow-lg);
+  width:600px;max-height:88vh;overflow-y:auto;
+}
+.am-head{
+  background:var(--navy);padding:15px 18px;
+  border-radius:var(--rl) var(--rl) 0 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.am-head-title{font-size:14px;font-weight:500;color:#e8eef5}
+.am-close{
+  background:rgba(255,255,255,.1);border:none;color:#94b4cc;
+  width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+}
+.am-body{padding:18px}
+.am-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px}
+.am-f label{font-family:var(--mono);font-size:9px;color:var(--gray400);display:block;margin-bottom:3px;letter-spacing:.05em}
+.am-f input,.am-f select,.am-f textarea{
+  width:100%;height:30px;padding:0 9px;
+  font-family:var(--sans);font-size:12px;
+  border:1px solid var(--border);border-radius:var(--r);
+  background:var(--gray50);color:var(--gray800);
+}
+.am-f input:focus,.am-f select:focus,.am-f textarea:focus{outline:none;border-color:var(--accent)}
+.am-f textarea{height:60px;padding:7px 9px;resize:vertical}
+.am-f.full{grid-column:1/-1}
+.am-foot{
+  padding:13px 18px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:8px;
+}
+.am-cancel{
+  height:30px;padding:0 16px;font-family:var(--mono);font-size:11px;
+  background:none;border:1px solid var(--border);border-radius:var(--r);
+  cursor:pointer;color:var(--gray600);
+}
+.am-submit{
+  height:30px;padding:0 18px;font-family:var(--mono);font-size:11px;
+  background:var(--navy);color:#e2e8f0;border:none;border-radius:var(--r);cursor:pointer;
+}
+.am-submit:hover{background:var(--navy3)}
+.am-note{
+  font-family:var(--mono);font-size:10px;color:var(--gray400);
+  padding:10px 12px;background:var(--gray50);border-radius:var(--r);
+  margin-bottom:12px;line-height:1.5;
+}
+
+/* ── SUMMARY ── */
+.sum-wrap{flex:1;overflow-y:auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px;box-shadow:var(--shadow)}
+.sc.full{grid-column:1/-1}
+.sc-title{font-family:var(--mono);font-size:10px;color:var(--gray400);letter-spacing:.06em;margin-bottom:12px}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.br-lbl{font-family:var(--mono);font-size:10px;min-width:118px}
+.br-track{flex:1;height:5px;background:var(--gray100);border-radius:3px;overflow:hidden}
+.br-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.br-cnt{font-family:var(--mono);font-size:10px;color:var(--gray400);min-width:22px;text-align:right}
+.top-r{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--gray100)}
+.top-r:last-child{border-bottom:none}
+.top-name{font-weight:500;font-size:12px;color:var(--navy)}
+.top-meta{font-family:var(--mono);font-size:10px;color:var(--gray400);margin-top:1px}
+
+/* ── AGENT ── */
+.agent-wrap{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden}
+.agent-left{overflow-y:auto;padding:18px;background:var(--bg)}
+.ag-lbl{font-family:var(--mono);font-size:10px;color:var(--gray400);letter-spacing:.07em;margin-bottom:12px}
+.task-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tc{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:14px;cursor:pointer;
+  transition:all .15s;box-shadow:var(--shadow);
+}
+.tc:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.tc-icon{font-size:16px;margin-bottom:8px}
+.tc-title{font-size:12px;font-weight:500;color:var(--navy);margin-bottom:3px}
+.tc-desc{font-size:10px;color:var(--gray500);font-family:var(--mono);line-height:1.5}
+.chat-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.chat-hd{background:var(--navy);padding:12px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.chat-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.chat-hd-title{font-family:var(--mono);font-size:11px;color:#e2e8f0}
+.chat-hd-sub{font-family:var(--mono);font-size:9px;color:#4a6880;margin-top:1px}
+.chat-msgs{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:10px}
+.cm-role{font-family:var(--mono);font-size:9px;color:var(--gray400);letter-spacing:.05em;margin-bottom:3px}
+.cm-body{font-size:11px;line-height:1.6;white-space:pre-wrap}
+.cm.user .cm-body{background:var(--gray50);border-radius:var(--r);padding:8px 10px;font-family:var(--mono)}
+.cm.agent .cm-body{background:var(--accent-bg);border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;padding:9px 11px;font-family:var(--mono)}
+.cm.thinking .cm-body{color:var(--gray400);font-style:italic;font-family:var(--mono)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.blink{animation:blink 1.2s infinite}
+.chat-foot{border-top:1px solid var(--border);padding:10px 12px;flex-shrink:0}
+.chat-hint{font-family:var(--mono);font-size:9px;color:var(--gray400);margin-bottom:5px}
+.chat-row{display:flex;gap:5px}
+#ci{
+  flex:1;height:32px;font-family:var(--mono);font-size:11px;
+  padding:0 10px;border:1px solid var(--border);border-radius:var(--r);
+  background:var(--gray50);color:var(--gray800);transition:border-color .15s;
+}
+#ci:focus{outline:none;border-color:var(--accent);background:#fff}
+.cs{
+  height:32px;padding:0 14px;font-family:var(--mono);font-size:10px;
+  background:var(--navy);color:#e2e8f0;border:none;border-radius:var(--r);
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.cs:hover:not(:disabled){background:var(--navy3)}
+.cs:disabled{opacity:.5;cursor:not-allowed}
+.cc{
+  height:32px;width:32px;font-size:12px;background:none;
+  border:1px solid var(--border);border-radius:var(--r);cursor:pointer;
+  color:var(--gray500);transition:all .15s;
+}
+.cc:hover{color:var(--red);border-color:var(--red)}
+
+/* ── SETUP ── */
+.setup-wrap{flex:1;overflow-y:auto;padding:24px}
+.setup-inner{max-width:700px;margin:0 auto}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:22px;margin-bottom:16px;box-shadow:var(--shadow)}
+.setup-step{display:flex;gap:14px;margin-bottom:16px}
+.step-n{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#e2e8f0;font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-b h3{font-size:13px;font-weight:500;color:var(--navy);margin-bottom:4px}
+.step-b p{font-size:12px;color:var(--gray600);line-height:1.7}
+.step-b code{font-family:var(--mono);font-size:11px;background:var(--gray100);padding:1px 5px;border-radius:3px;color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo">HBF</div>
+    <div>
+      <div class="tb-title">M&amp;A Pipeline</div>
+      <div class="tb-sub">Corporate Development</div>
+    </div>
+  </div>
+  <nav class="tb-nav">
+    <button class="tb-btn active" onclick="nav('pipeline')">PIPELINE</button>
+    <button class="tb-btn" onclick="nav('summary')">SUMMARY</button>
+    <button class="tb-btn" onclick="nav('agent')">AI AGENT</button>
+    <button class="tb-btn" onclick="nav('setup')">SETUP</button>
+  </nav>
+  <div class="tb-right">
+    <div class="sync-status" id="sync-status">
+      <span class="dot dot-off" id="sync-dot"></span>
+      <span id="sync-txt" style="color:#4a6880;font-family:var(--mono);font-size:9px">NOT LOADED</span>
+    </div>
+    <button class="sync-btn" id="sync-btn" onclick="loadSheet()">↻ Load Data</button>
+    <div class="tb-field">
+      <label>ANTHROPIC KEY</label>
+      <input class="tb-inp wide" type="password" id="api-key" placeholder="sk-ant-..." />
+    </div>
+  </div>
+</header>
+
+<div class="body">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-sec">
+    <div class="sb-lbl">SEARCH</div>
+    <div class="sb-f">
+      <input type="text" id="q" placeholder="Company, owner, industry…" oninput="filter()" />
+    </div>
+  </div>
+  <div class="sb-div"></div>
+  <div class="sb-sec">
+    <div class="sb-lbl">FILTERS</div>
+    <div class="sb-f"><label>GBU</label>
+      <select id="f-gbu" onchange="filter()">
+        <option value="">All GBUs</option>
+        <option>EA</option><option>HHC</option><option>BAS</option>
+      </select>
+    </div>
+    <div class="sb-f"><label>Strategic Fit</label>
+      <select id="f-fit" onchange="filter()">
+        <option value="">All</option>
+        <option value="5">★★★★★</option>
+        <option value="4">★★★★+</option>
+        <option value="3">★★★+</option>
+      </select>
+    </div>
+    <div class="sb-f"><label>Ownership</label>
+      <select id="f-own" onchange="filter()">
+        <option value="">All Types</option>
+        <option>Family Owned</option><option>Private Equity</option>
+        <option>Public</option><option>Private (Other)</option>
+        <option>Partnership</option><option>Venture Capital</option>
+      </select>
+    </div>
+    <div class="sb-f"><label>Geography</label>
+      <select id="f-geo" onchange="filter()">
+        <option value="">All</option>
+        <option>USA</option><option>Germany</option><option>UK</option>
+        <option>France</option><option>Japan</option><option>China</option>
+        <option>Italy</option><option>Brazil</option><option>Turkey</option>
+        <option>South Korea</option><option>Canada</option><option>Switzerland</option>
+        <option>Netherlands</option><option>India</option><option>Malaysia</option>
+      </select>
+    </div>
+    <div class="sb-f"><label>Actionable</label>
+      <select id="f-act" onchange="filter()">
+        <option value="">All</option>
+        <option value="yes">Actionable Only</option>
+      </select>
+    </div>
+  </div>
+  <div class="sb-div"></div>
+  <div class="kpi-wrap">
+    <div class="kpi blue"><div class="kpi-l">TOTAL PIPELINE</div><div class="kpi-v blue" id="k-total">—</div><div class="kpi-s">companies tracked</div></div>
+    <div class="kpi"><div class="kpi-l">ACTIVE</div><div class="kpi-v" id="k-active">—</div><div class="kpi-s">prospect → active</div></div>
+    <div class="kpi orange"><div class="kpi-l">IN DISCUSSION</div><div class="kpi-v orange" id="k-disc">—</div><div class="kpi-s">active discussions</div></div>
+    <div class="kpi green"><div class="kpi-l">ACTIONABLE NOW</div><div class="kpi-v green" id="k-act">—</div><div class="kpi-s">flagged</div></div>
+    <div class="kpi gold"><div class="kpi-l">★★★★★ TARGETS</div><div class="kpi-v gold" id="k-five">—</div><div class="kpi-s">top priority</div></div>
+  </div>
+</aside>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- PIPELINE -->
+  <div class="panel active" id="panel-pipeline">
+    <div class="pipe-bar">
+      <div class="pills" id="pills"></div>
+      <div class="pipe-right">
+        <span class="cnt" id="cnt">—</span>
+        <button class="ref-btn" onclick="loadSheet()" id="ref-btn">↻</button>
+        <button class="add-btn" onclick="openAdd()">＋ Add Deal</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="dt">
+        <thead><tr>
+          <th onclick="sort('company')">COMPANY</th>
+          <th onclick="sort('stage')">STAGE</th>
+          <th onclick="sort('fit')">FIT</th>
+          <th>GBU</th>
+          <th onclick="sort('rev')" style="text-align:right">REV $M</th>
+          <th onclick="sort('ebitda')" style="text-align:right">EBITDA $M</th>
+          <th>OWNERSHIP</th>
+          <th>DEAL OWNER</th>
+          <th>ACTION?</th>
+          <th>NEXT STEPS</th>
+          <th>FILES</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="panel" id="panel-summary">
+    <div class="sum-wrap" id="sum-wrap"></div>
+  </div>
+
+  <!-- AGENT -->
+  <div class="panel" id="panel-agent">
+    <div class="agent-wrap">
+      <div class="agent-left">
+        <div class="ag-lbl">AUTOMATED TASKS — click to run</div>
+        <div class="task-grid" id="task-grid"></div>
+      </div>
+      <div class="chat-panel">
+        <div class="chat-hd">
+          <div class="chat-dot"></div>
+          <div>
+            <div class="chat-hd-title">M&A DEAL AGENT</div>
+            <div class="chat-hd-sub">claude-sonnet-4 · Live pipeline context</div>
+          </div>
+        </div>
+        <div class="chat-msgs" id="chat-msgs">
+          <div class="cm agent">
+            <div class="cm-role">AGENT</div>
+            <div class="cm-body">Ready. Load your Google Sheet data using the button in the top bar — I'll have full context on all your live deals.
+
+Add your Anthropic API key to enable live AI responses. Select a task on the left or type a custom instruction below.</div>
+          </div>
+        </div>
+        <div class="chat-foot">
+          <div class="chat-hint">↵ send · Shift+↵ new line</div>
+          <div class="chat-row">
+            <input type="text" id="ci" placeholder="Ask anything about the pipeline…" onkeydown="ck(event)" />
+            <button class="cc" onclick="clearChat()" title="Clear">↺</button>
+            <button class="cs" id="cs" onclick="send()">SEND ↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="panel" id="panel-setup">
+    <div class="setup-wrap">
+      <div class="setup-inner">
+        <div class="setup-card">
+          <div style="font-size:16px;font-weight:600;color:var(--navy);margin-bottom:4px">Setup Guide</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--gray400);margin-bottom:20px">Google Sheets + SharePoint · One-time setup</div>
+
+          <div class="setup-step">
+            <div class="step-n">1</div>
+            <div class="step-b">
+              <h3>Google Sheet is already connected</h3>
+              <p>The dashboard reads from your published Google Sheet automatically. Click <strong>↻ Load Data</strong> in the top bar to fetch the latest data at any time. To update deals, edit your Google Sheet directly — then click Refresh to see changes in the dashboard.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-n">2</div>
+            <div class="step-b">
+              <h3>Set your SharePoint base URL</h3>
+              <p>Open SharePoint and navigate to your <strong>Company Profiles</strong> folder inside your Corp Dev document library. Copy the URL from your browser and paste it below. The dashboard will use it to generate a direct link to each company's folder in the Files tab of every deal drawer.</p>
+            </div>
+          </div>
+
+          <div style="padding:14px;background:var(--gray50);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px">
+            <label style="font-family:var(--mono);font-size:9px;color:var(--gray500);display:block;margin-bottom:5px;letter-spacing:.05em">SHAREPOINT BASE URL (Company Profiles folder)</label>
+            <input type="text" id="sp-url-input" style="width:100%;height:30px;font-family:var(--mono);font-size:11px;padding:0 9px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--gray800)" placeholder="https://hbfuller.sharepoint.com/sites/CorpDev/..." />
+            <button onclick="saveSpUrl()" style="margin-top:8px;height:28px;padding:0 14px;font-family:var(--mono);font-size:10px;background:var(--navy);color:#e2e8f0;border:none;border-radius:var(--r);cursor:pointer">Save URL</button>
+            <div id="sp-url-saved" style="display:none;font-family:var(--mono);font-size:10px;color:var(--green);margin-top:6px">✓ Saved — links will appear in each company's Files tab</div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-n">3</div>
+            <div class="step-b">
+              <h3>Create company folders in SharePoint</h3>
+              <p>Inside your <strong>Company Profiles</strong> folder, create one subfolder per company using the exact company name (e.g. <code>DELO Industrial Adhesives</code>). The dashboard generates the link automatically — just drop files into the folder and they'll be accessible from the dashboard.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-n">4</div>
+            <div class="step-b">
+              <h3>Enable the AI Agent</h3>
+              <p>Paste your Anthropic API key in the top bar (starts with <code>sk-ant-</code>). The agent has full context on your live pipeline and can draft outreach emails, DD checklists, valuation memos, IC notes, competitive scans, and more.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-n">5</div>
+            <div class="step-b">
+              <h3>Share with your team</h3>
+              <p>Share this HTML file via email or put it on a shared drive. Each team member opens it in their browser — no installation needed. Everyone reads from the same Google Sheet. To edit deal data, update the Google Sheet directly. The dashboard auto-refreshes on load.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dr-head" id="dr-head"></div>
+  <div class="dr-tabs">
+    <button class="dr-tab on" onclick="drTab(this,'dt-fields')">DEAL FIELDS</button>
+    <button class="dr-tab" onclick="drTab(this,'dt-docs')">FILES &amp; DOCS</button>
+    <button class="dr-tab" onclick="drTab(this,'dt-agent')">AGENT</button>
+  </div>
+  <div class="dr-body">
+    <div class="dr-pane on" id="dt-fields"></div>
+    <div class="dr-pane" id="dt-docs"></div>
+    <div class="dr-pane" id="dt-agent"></div>
+  </div>
+</div>
+
+<!-- FIT MODAL -->
+<div class="fit-modal" id="fit-modal">
+  <div class="fm-bg" onclick="closeFit()"></div>
+  <div class="fm-box">
+    <button class="fm-close" onclick="closeFit()">✕</button>
+    <div class="fm-title">Strategic Fit Rating Criteria</div>
+    <div class="fm-sub">H.B. Fuller Corporate Development · Official grading rubric</div>
+    <div class="fm-row">
+      <div class="fm-hd"><span class="fm-stars" style="color:#92700a">★★★★★</span><span class="fm-label">Nearly Perfect Strategic Alignment</span></div>
+      <div class="fm-crit"><ul>
+        <li>Fills a Top 20 Strategic Gap</li>
+        <li>Strong cross-sell opportunities with minimal customer overlap</li>
+        <li>Critical technologies or IP highly valuable</li>
+        <li>Strong cultural and operational compatibility — "Great Talent"</li>
+        <li>Immediate synergies possible</li>
+        <li>Strengthens core growth markets or access to strategic regions</li>
+      </ul></div>
+    </div>
+    <div class="fm-row">
+      <div class="fm-hd"><span class="fm-stars" style="color:#b45309">★★★★</span><span class="fm-label">Very Good Alignment or Significant Consolidation Opportunity</span></div>
+      <div class="fm-crit"><ul>
+        <li>Product lines additive with little overlap</li>
+        <li>Expands market access or fills key portfolio gaps (Top 20)</li>
+        <li>Moderate technology synergies</li>
+        <li>Cultural fit manageable with integration planning</li>
+        <li>Significant operational or supply chain synergies possible</li>
+      </ul></div>
+    </div>
+    <div class="fm-row">
+      <div class="fm-hd"><span class="fm-stars" style="color:#d97706">★★★</span><span class="fm-label">Acceptable / Niche Fit</span></div>
+      <div class="fm-crit"><ul>
+        <li>Focused on non-core but attractive adjacent market</li>
+        <li>Some technology or customer base relevance</li>
+        <li>Cultural integration more complex</li>
+        <li>Could be platform for growth with investment</li>
+        <li>Some synergies possible but not immediate</li>
+      </ul></div>
+    </div>
+    <div class="fm-row">
+      <div class="fm-hd"><span class="fm-stars" style="color:#9ca3af">★★</span><span class="fm-label">Limited Strategic Value</span></div>
+      <div class="fm-crit"><ul>
+        <li>Unrelated products or markets</li>
+        <li>Heavy effort required to integrate or reposition</li>
+        <li>Minor synergy potential — more financial than strategic</li>
+        <li>Limited overlap with core capabilities</li>
+      </ul></div>
+    </div>
+    <div class="fm-row">
+      <div class="fm-hd"><span class="fm-stars" style="color:#e5e7eb">★</span><span class="fm-label">No Strategic Alignment</span></div>
+      <div class="fm-crit"><ul>
+        <li>Entirely different industry or technology</li>
+        <li>No synergy, no product overlap</li>
+        <li>Difficult cultural or operational integration</li>
+        <li>Would dilute focus or resource capacity</li>
+        <li>Primarily opportunistic with very high risk</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="add-modal" id="add-modal">
+  <div class="am-bg" onclick="closeAdd()"></div>
+  <div class="am-box">
+    <div class="am-head">
+      <div class="am-head-title">Add New Deal</div>
+      <button class="am-close" onclick="closeAdd()">✕</button>
+    </div>
+    <div class="am-body">
+      <div class="am-note">ℹ New deals are added to your local session. To permanently save, also add the row to your Google Sheet and click ↻ Refresh.</div>
+      <div class="am-grid">
+        <div class="am-f full"><label>COMPANY NAME *</label><input type="text" id="an-co" placeholder="Company name" /></div>
+        <div class="am-f"><label>STAGE</label>
+          <select id="an-stage"><option>Prospect</option><option>Reach-out</option><option>Active Discussion</option><option>Monitor</option><option>Closed</option><option>Passed On</option></select>
+        </div>
+        <div class="am-f"><label>GBU</label>
+          <select id="an-gbu"><option>EA</option><option>HHC</option><option>BAS</option></select>
+        </div>
+        <div class="am-f"><label>STRATEGIC FIT</label>
+          <select id="an-fit"><option value="">—</option><option>★★★★★</option><option>★★★★</option><option>★★★</option><option>★★</option><option>★</option></select>
+        </div>
+        <div class="am-f"><label>GEOGRAPHY</label><input type="text" id="an-geo" placeholder="e.g. USA" /></div>
+        <div class="am-f"><label>REVENUE ($M)</label><input type="number" id="an-rev" placeholder="0" /></div>
+        <div class="am-f"><label>EBITDA ($M)</label><input type="number" id="an-ebitda" placeholder="0" /></div>
+        <div class="am-f"><label>OWNERSHIP TYPE</label>
+          <select id="an-own"><option>Family Owned</option><option>Private Equity</option><option>Public</option><option>Private (Other)</option><option>Partnership</option><option>Venture Capital</option></select>
+        </div>
+        <div class="am-f"><label>DEAL OWNER</label><input type="text" id="an-owner" placeholder="e.g. Kryzer, Brendon" /></div>
+        <div class="am-f"><label>KEY CONTACT</label><input type="text" id="an-contact" placeholder="Contact name" /></div>
+        <div class="am-f"><label>INDUSTRY/SEGMENT</label><input type="text" id="an-ind" placeholder="e.g. Electronics; Medical" /></div>
+        <div class="am-f"><label>DEAL SOURCE</label>
+          <select id="an-src"><option>Direct</option><option>Broker</option><option>Referral</option></select>
+        </div>
+        <div class="am-f full"><label>NEXT STEPS</label><textarea id="an-steps" placeholder="Current next steps…"></textarea></div>
+      </div>
+    </div>
+    <div class="am-foot">
+      <button class="am-cancel" onclick="closeAdd()">Cancel</button>
+      <button class="am-submit" onclick="addDeal()">Add to Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQY9kp0fTG-Fk3P5sQfg69dg0wPHofdLRwGY4QDPxu-Od3SNarQo3fexJpguwdGFNNFbbhyD8TaxNec/pub?gid=0&single=true&output=csv';
+
+// Column order must match the CSV headers exactly
+const COLS = {
+  company:0, stage:1, gbu:2, fit:3, rev:4, ebitda:5, ebitdaPct:6,
+  ownerType:7, geo:8, industry:9, owner:10, keyContact:11, bankers:12,
+  lastContact:13, nextFollowup:14, actionable:15, nextSteps:16,
+  valStatus:17, ddStatus:18, source:19, notionUrl:20
+};
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let DEALS = [];
+let filtered = [];
+let sel = null;
+let stagePill = '';
+let sortKey = '', sortAsc = true;
+let chatHist = [];
+let revChart = null;
+let pendingEdits = {};
+let spBaseUrl = localStorage.getItem('hbf-sp-url') || '';
+let apiKey = localStorage.getItem('hbf-api-key') || '';
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore saved values
+  if (spBaseUrl) document.getElementById('sp-url-input').value = spBaseUrl;
+  if (apiKey) document.getElementById('api-key').value = apiKey;
+
+  document.getElementById('api-key').addEventListener('change', e => {
+    apiKey = e.target.value; localStorage.setItem('hbf-api-key', apiKey);
+  });
+
+  buildTasks();
+  loadSheet();
+});
+
+// ════════════════════════════════════════════
+// GOOGLE SHEETS LOADER
+// ════════════════════════════════════════════
+async function loadSheet() {
+  setSyncStatus('loading', 'LOADING…');
+  const btn = document.getElementById('sync-btn');
+  const ref = document.getElementById('ref-btn');
+  btn.disabled = true;
+  if (ref) ref.innerHTML = '<span class="spin">↻</span>';
+
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    DEALS = parseCSV(text);
+    setSyncStatus('ok', 'LIVE · ' + DEALS.length + ' deals');
+    renderAll();
+    updateAgentContext();
+  } catch (e) {
+    setSyncStatus('err', 'ERROR — check console');
+    console.error('Sheet load error:', e);
+    addMsg('agent', 'Could not load Google Sheet: ' + e.message + '\n\nMake sure the sheet is published to web as CSV. See the SETUP tab for instructions.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↻ Refresh';
+  if (ref) ref.innerHTML = '↻';
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const parse = line => {
+    const out = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"' && !inQ) { inQ = true; continue; }
+      if (c === '"' && inQ) {
+        if (line[i+1] === '"') { cur += '"'; i++; } else inQ = false;
+        continue;
+      }
+      if (c === ',' && !inQ) { out.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    out.push(cur.trim());
+    return out;
+  };
+
+  // Skip header row
+  return lines.slice(1).map(line => {
+    const f = parse(line);
+    const g = k => (f[COLS[k]] || '').trim();
+    const n = k => parseFloat(g(k).replace(/[^0-9.-]/g, '')) || 0;
+    return {
+      id: 'row-' + Math.random().toString(36).slice(2),
+      company: g('company'),
+      stage: g('stage'),
+      gbu: g('gbu'),
+      fit: g('fit'),
+      rev: n('rev'),
+      ebitda: n('ebitda'),
+      ebitdaPct: g('ebitdaPct'),
+      ownerType: g('ownerType'),
+      geo: g('geo'),
+      industry: g('industry'),
+      owner: g('owner'),
+      keyContact: g('keyContact'),
+      bankers: g('bankers'),
+      lastContact: g('lastContact'),
+      nextFollowup: g('nextFollowup'),
+      actionable: g('actionable').toLowerCase() === 'yes',
+      nextSteps: g('nextSteps'),
+      valStatus: g('valStatus'),
+      ddStatus: g('ddStatus'),
+      source: g('source'),
+      notionUrl: g('notionUrl'),
+    };
+  }).filter(d => d.company);
+}
+
+function setSyncStatus(state, txt) {
+  const dot = document.getElementById('sync-dot');
+  const t = document.getElementById('sync-txt');
+  dot.className = 'dot dot-' + (state === 'ok' ? 'ok' : state === 'loading' ? 'load' : state === 'err' ? 'err' : 'off');
+  t.textContent = txt;
+  t.style.color = state === 'ok' ? '#4ade80' : state === 'err' ? '#f87171' : state === 'loading' ? '#fbbf24' : '#4a6880';
+}
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function renderAll() {
+  updateKPIs();
+  buildPills();
+  filter();
+}
+
+function updateKPIs() {
+  const total = DEALS.length;
+  const active = DEALS.filter(d => ['Prospect','Reach-out','Active Discussion'].includes(d.stage)).length;
+  const disc = DEALS.filter(d => d.stage === 'Active Discussion').length;
+  const act = DEALS.filter(d => d.actionable).length;
+  const five = DEALS.filter(d => (d.fit||'').length >= 5).length;
+  document.getElementById('k-total').textContent = total || '—';
+  document.getElementById('k-active').textContent = active || '—';
+  document.getElementById('k-disc').textContent = disc || '—';
+  document.getElementById('k-act').textContent = act || '—';
+  document.getElementById('k-five').textContent = five || '—';
+}
+
+function buildPills() {
+  const c = {};
+  DEALS.forEach(d => c[d.stage] = (c[d.stage]||0)+1);
+  const defs = [
+    {k:'', l:`ALL (${DEALS.length})`, cls:'p-all'},
+    {k:'Active Discussion', l:`ACTIVE (${c['Active Discussion']||0})`, cls:'p-disc'},
+    {k:'Prospect', l:`PROSPECT (${c['Prospect']||0})`, cls:'p-pros'},
+    {k:'Reach-out', l:`REACH-OUT (${c['Reach-out']||0})`, cls:'p-rout'},
+    {k:'Monitor', l:`MONITOR (${c['Monitor']||0})`, cls:'p-mon'},
+    {k:'Closed', l:`CLOSED (${c['Closed']||0})`, cls:'p-cls'},
+    {k:'Passed On', l:`PASSED (${c['Passed On']||0})`, cls:'p-pass'},
+  ];
+  document.getElementById('pills').innerHTML = defs.map(d =>
+    `<button class="pill ${d.cls}${d.k===stagePill?' on':''}" onclick="setPill('${d.k}')">${d.l}</button>`
+  ).join('');
+}
+
+function setPill(k) { stagePill = k; buildPills(); filter(); }
+
+function filter() {
+  const q = (document.getElementById('q').value||'').toLowerCase();
+  const gbu = document.getElementById('f-gbu').value;
+  const fitMin = parseInt(document.getElementById('f-fit').value)||0;
+  const own = document.getElementById('f-own').value;
+  const geo = document.getElementById('f-geo').value;
+  const act = document.getElementById('f-act').value;
+
+  filtered = DEALS.filter(d => {
+    if (stagePill && d.stage !== stagePill) return false;
+    if (gbu && d.gbu !== gbu) return false;
+    if (geo && d.geo !== geo) return false;
+    if (own && d.ownerType !== own) return false;
+    if (fitMin && (d.fit||'').length < fitMin) return false;
+    if (act === 'yes' && !d.actionable) return false;
+    if (q) {
+      const h = [d.company, d.owner, d.industry, d.nextSteps, d.keyContact, d.geo].join(' ').toLowerCase();
+      if (!h.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (sortKey) {
+    filtered.sort((a, b) => {
+      let av = a[sortKey]||'', bv = b[sortKey]||'';
+      if (typeof av === 'number') return sortAsc ? av-bv : bv-av;
+      return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+    });
+  }
+
+  renderTable();
+}
+
+function sort(k) {
+  sortKey === k ? sortAsc = !sortAsc : (sortKey = k, sortAsc = true);
+  document.querySelectorAll('table.dt thead th').forEach(th => th.classList.remove('sa','sd'));
+  const idx = ['company','stage','fit','','rev','ebitda'].indexOf(k);
+  const ths = document.querySelectorAll('table.dt thead th');
+  if (idx >= 0 && ths[idx]) ths[idx].classList.add(sortAsc ? 'sa' : 'sd');
+  filter();
+}
+
+function sc(s) {
+  if (!s) return 's-Monitor';
+  if (s.startsWith('Active')) return 's-Active';
+  if (s === 'Passed On') return 's-Passed';
+  return 's-' + s.replace(/\s/g,'');
+}
+
+function starColor(fit) {
+  const l = (fit||'').length;
+  return l>=5 ? '#92700a' : l>=4 ? '#b45309' : l>=3 ? '#d97706' : '#9ca3af';
+}
+
+function spUrl(company) {
+  const base = spBaseUrl || localStorage.getItem('hbf-sp-url') || '';
+  if (!base) return null;
+  const clean = base.replace(/\/$/, '');
+  return clean + '/' + encodeURIComponent(company);
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  document.getElementById('cnt').textContent = filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '');
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="11" class="empty-td">${DEALS.length ? 'No deals match filters' : 'Click ↻ Load Data to fetch your pipeline'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((d, i) => {
+    const isSel = sel && sel.id === d.id ? 'sel' : '';
+    const url = spUrl(d.company);
+    const filesCell = url
+      ? `<a class="sp-btn" href="${url}" target="_blank" onclick="event.stopPropagation()">📁 Files</a>`
+      : `<span style="color:var(--gray300);font-family:var(--mono);font-size:10px">—</span>`;
+    return `<tr class="${isSel}" onclick="openDrawer(${i})">
+      <td><div class="co-name">${esc(d.company)}</div><div class="co-sub">${esc(d.geo)}${d.industry?' · '+d.industry.split(';')[0].trim():''}</div></td>
+      <td><span class="sbadge ${sc(d.stage)}">${d.stage||'—'}</span></td>
+      <td><span class="stars" style="color:${starColor(d.fit)}">${d.fit||'—'}</span></td>
+      <td><span class="gtag g-${d.gbu||'EA'}">${d.gbu||'—'}</span></td>
+      <td class="num">${d.rev ? '$'+Number(d.rev).toLocaleString() : '—'}</td>
+      <td class="num">${d.ebitda ? '$'+Number(d.ebitda).toFixed(1) : '—'}</td>
+      <td style="font-size:11px">${(d.ownerType||'—').replace('Private (Other)','Pvt (Other)')}</td>
+      <td style="font-size:11px">${(d.owner||'—').split(';')[0].trim()}</td>
+      <td class="${d.actionable?'y':'n'}" style="text-align:center">${d.actionable?'YES':'—'}</td>
+      <td class="step-txt" title="${esc(d.nextSteps)}">${esc(d.nextSteps)||'—'}</td>
+      <td>${filesCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// DRAWER
+// ════════════════════════════════════════════
+function openDrawer(idx) {
+  sel = filtered[idx];
+  pendingEdits = {};
+  renderDrawer();
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  renderTable();
+}
+
+function closeDrawer() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  sel = null; pendingEdits = {};
+  renderTable();
+}
+
+function drTab(btn, pane) {
+  document.querySelectorAll('.dr-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.dr-pane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById(pane).classList.add('on');
+}
+
+function renderDrawer() {
+  if (!sel) return;
+  const d = sel;
+
+  // Head
+  document.getElementById('dr-head').innerHTML = `
+    <button class="dr-close" onclick="closeDrawer()">✕</button>
+    <div class="dr-co">${esc(d.company)}</div>
+    <div class="dr-meta">
+      <span class="sbadge ${sc(d.stage)}" style="font-size:10px">${d.stage||'—'}</span>
+      <span class="gtag g-${d.gbu||'EA'}" style="font-size:9px">${d.gbu||'—'}</span>
+      ${d.fit?`<span style="color:${starColor(d.fit)};font-size:12px;letter-spacing:-1px">${d.fit}</span>`:''}
+      ${d.actionable?`<span style="background:#dcfce7;color:#15803d;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px">ACTIONABLE</span>`:''}
+    </div>`;
+
+  // Fields pane
+  const hasPending = Object.keys(pendingEdits).length > 0;
+  document.getElementById('dt-fields').innerHTML = `
+    ${hasPending ? `<div class="unsaved">Unsaved changes — these update locally only. To save permanently, also update your Google Sheet.<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="applyEdits()">Apply Locally</button></div></div>` : ''}
+    <div class="sec-title">DEAL OVERVIEW</div>
+    <div class="f-grid">
+      ${fld('stage','Stage','select',d.stage,['Prospect','Reach-out','Active Discussion','Monitor','Closed','Passed On'])}
+      ${fld('gbu','GBU','select',d.gbu,['EA','HHC','BAS'])}
+      ${fld('fit','Strategic Fit <span class="fit-info" onclick="showFit();event.stopPropagation()">ⓘ</span>','select',d.fit,['','★','★★','★★★','★★★★','★★★★★'])}
+      ${fld('ownerType','Ownership Type','select',d.ownerType,['Family Owned','Private Equity','Public','Private (Other)','Partnership','Venture Capital','Joint Venture'])}
+      ${fld('rev','Revenue ($M)','number',d.rev)}
+      ${fld('ebitda','EBITDA ($M)','number',d.ebitda)}
+      ${fld('geo','Geography','text',d.geo)}
+      ${fld('source','Deal Source','select',d.source,['Direct','Broker','Referral'])}
+    </div>
+    <div class="sec-title">CONTACTS & COVERAGE</div>
+    <div class="f-grid">
+      ${fld('owner','Deal Owner','text',d.owner)}
+      ${fld('keyContact','Key Contact','text',d.keyContact)}
+      ${fld('bankers','Bankers','text',d.bankers)}
+      ${fld('valStatus','Val Status','select',d.valStatus,['Not Run','Pending','Complete','Stale'])}
+      ${fld('ddStatus','DD Status','select',d.ddStatus,['Not Run','Pending','Complete','Stale'])}
+      ${fld('industry','Industry/Segment','text',d.industry)}
+    </div>
+    ${d.lastContact||d.nextFollowup?`
+    <div class="sec-title">TIMELINE</div>
+    <div class="f-grid">
+      ${d.lastContact?fld('lastContact','Last Contact','date',d.lastContact):''}
+      ${d.nextFollowup?fld('nextFollowup','Next Follow-up','date',d.nextFollowup):''}
+    </div>`:''}
+    <div class="sec-title">NEXT STEPS</div>
+    ${fld('nextSteps','','textarea',d.nextSteps)}
+    <div style="margin-top:12px;font-family:var(--mono);font-size:9px;color:var(--gray400)">
+      ⓘ Edits here update your local session. To save permanently, update the Google Sheet and click ↻ Refresh.
+    </div>`;
+
+  // Docs pane
+  const url = spUrl(d.company);
+  const spBase = spBaseUrl || localStorage.getItem('hbf-sp-url') || '';
+  document.getElementById('dt-docs').innerHTML = `
+    ${url ? `
+    <a class="sp-hero" href="${url}" target="_blank">
+      <span class="sp-hero-icon">📁</span>
+      <div>
+        <div class="sp-hero-title">Open ${esc(d.company)} — SharePoint</div>
+        <div class="sp-hero-sub">View and upload files for this company</div>
+      </div>
+    </a>` : `
+    <div class="sp-info">
+      📋 Set your SharePoint base URL in the <strong>SETUP</strong> tab to enable direct file links for each company.
+    </div>`}
+    <div class="sec-title">FILE TYPES TO STORE PER COMPANY</div>
+    <div class="doc-grid">
+      <div class="doc-card"><div class="doc-icon">📄</div><div class="doc-title">CIM / IM</div><div class="doc-desc">Confidential Information Memorandum from bankers</div></div>
+      <div class="doc-card"><div class="doc-icon">🔒</div><div class="doc-title">NDA / CDA</div><div class="doc-desc">Signed confidentiality agreements</div></div>
+      <div class="doc-card"><div class="doc-icon">📊</div><div class="doc-title">Financial Model</div><div class="doc-desc">Excel models, DCF, valuation work</div></div>
+      <div class="doc-card"><div class="doc-icon">🏢</div><div class="doc-title">Company Profile</div><div class="doc-desc">AI-generated profiles and research notes</div></div>
+      <div class="doc-card"><div class="doc-icon">✉</div><div class="doc-title">Correspondence</div><div class="doc-desc">Emails, meeting notes, call summaries</div></div>
+      <div class="doc-card"><div class="doc-icon">⚖️</div><div class="doc-title">DD Materials</div><div class="doc-desc">Due diligence checklists and findings</div></div>
+    </div>
+    ${!spBase ? `
+    <div class="sp-setup" style="margin-top:14px">
+      <p>Paste your SharePoint <strong>Company Profiles</strong> folder URL to enable file links for all 171 companies.</p>
+      <label>SHAREPOINT BASE URL</label>
+      <input type="text" id="sp-quick" placeholder="https://hbfuller.sharepoint.com/…" value="${esc(spBase)}" />
+      <button class="sp-save-url" onclick="saveSpUrlQuick()">Save &amp; Enable Links</button>
+    </div>` : ''}`;
+
+  // Agent pane
+  document.getElementById('dt-agent').innerHTML = `
+    <div class="sec-title">QUICK ACTIONS FOR ${esc(d.company).toUpperCase()}</div>
+    <div class="qa-grid">
+      <button class="qa" onclick="drawerTask('outreach')"><span class="qa-icon">✉</span><div><div class="qa-title">Draft outreach</div><div class="qa-sub">Tailored to ${d.ownerType||'ownership type'}</div></div></button>
+      <button class="qa" onclick="drawerTask('dd')"><span class="qa-icon">✓</span><div><div class="qa-title">DD checklist</div><div class="qa-sub">${d.industry?d.industry.split(';')[0].trim():''} focus</div></div></button>
+      <button class="qa" onclick="drawerTask('valuation')"><span class="qa-icon">$</span><div><div class="qa-title">Valuation memo</div><div class="qa-sub">$${d.rev}M rev · $${d.ebitda}M EBITDA</div></div></button>
+      <button class="qa" onclick="drawerTask('ic')"><span class="qa-icon">◉</span><div><div class="qa-title">IC update note</div><div class="qa-sub">${d.stage} · ${d.fit||'—'}</div></div></button>
+      <button class="qa" onclick="drawerTask('risk')"><span class="qa-icon">⚑</span><div><div class="qa-title">Risk assessment</div><div class="qa-sub">${d.geo} · ${d.ownerType||''}</div></div></button>
+      <button class="qa" onclick="drawerTask('nda')"><span class="qa-icon">🔒</span><div><div class="qa-title">NDA send memo</div><div class="qa-sub">Rationale &amp; approach</div></div></button>
+    </div>`;
+}
+
+// ── Field builder ──
+function fld(key, label, type, value, opts) {
+  const lbl = label ? `<div class="f-lbl">${label}</div>` : '';
+  const v = value !== undefined && value !== null ? String(value) : '';
+
+  if (type === 'textarea') return `<div class="f-row" style="grid-column:1/-1">${lbl}<textarea class="f-ta" onchange="edit('${key}',this.value)">${esc(v)}</textarea></div>`;
+  if (type === 'select') {
+    const options = (opts||[]).map(o => `<option${o===v?' selected':''}>${esc(o)}</option>`).join('');
+    return `<div class="f-row">${lbl}<select class="f-sel" onchange="edit('${key}',this.value)">${options}</select></div>`;
+  }
+  if (type === 'number') return `<div class="f-row">${lbl}<input type="number" class="f-inp" value="${esc(v)}" onchange="edit('${key}',this.value)" /></div>`;
+  if (type === 'date') return `<div class="f-row">${lbl}<input type="date" class="f-inp" value="${esc(v)}" onchange="edit('${key}',this.value)" /></div>`;
+  return `<div class="f-row">${lbl}<input type="text" class="f-inp" value="${esc(v)}" onchange="edit('${key}',this.value)" /></div>`;
+}
+
+function edit(key, val) {
+  pendingEdits[key] = val;
+  // Show unsaved banner if not already there
+  const pane = document.getElementById('dt-fields');
+  if (!pane.querySelector('.unsaved')) {
+    const div = document.createElement('div');
+    div.className = 'unsaved';
+    div.innerHTML = `Unsaved changes — update Google Sheet to save permanently.<div class="unsaved-btns"><button class="discard-btn" onclick="discard()">Discard</button><button class="save-btn" onclick="applyEdits()">Apply Locally</button></div>`;
+    pane.insertBefore(div, pane.firstChild);
+  }
+}
+
+function applyEdits() {
+  if (!sel) return;
+  Object.assign(sel, pendingEdits);
+  // Also update in DEALS array
+  const idx = DEALS.findIndex(d => d.id === sel.id);
+  if (idx >= 0) Object.assign(DEALS[idx], pendingEdits);
+  pendingEdits = {};
+  updateKPIs();
+  buildPills();
+  filter();
+
+  const pane = document.getElementById('dt-fields');
+  const unsaved = pane.querySelector('.unsaved');
+  if (unsaved) unsaved.outerHTML = `<div class="saved-flash">✓ Applied locally — also update your Google Sheet to save permanently.</div>`;
+  setTimeout(() => { const f = pane.querySelector('.saved-flash'); if(f) f.remove(); }, 4000);
+}
+
+function discard() {
+  pendingEdits = {};
+  renderDrawer();
+}
+
+// ════════════════════════════════════════════
+// SHAREPOINT URL
+// ════════════════════════════════════════════
+function saveSpUrl() {
+  const val = document.getElementById('sp-url-input').value.trim();
+  spBaseUrl = val;
+  localStorage.setItem('hbf-sp-url', val);
+  document.getElementById('sp-url-saved').style.display = 'block';
+  setTimeout(() => { document.getElementById('sp-url-saved').style.display = 'none'; }, 3000);
+  filter(); // re-render table to show new links
+}
+
+function saveSpUrlQuick() {
+  const val = document.getElementById('sp-quick')?.value.trim();
+  if (!val) return;
+  spBaseUrl = val;
+  localStorage.setItem('hbf-sp-url', val);
+  document.getElementById('sp-url-input') && (document.getElementById('sp-url-input').value = val);
+  renderDrawer();
+  filter();
+}
+
+// ════════════════════════════════════════════
+// ADD DEAL
+// ════════════════════════════════════════════
+function openAdd() { document.getElementById('add-modal').classList.add('open'); }
+function closeAdd() { document.getElementById('add-modal').classList.remove('open'); }
+
+function addDeal() {
+  const co = document.getElementById('an-co').value.trim();
+  if (!co) { alert('Company name is required.'); return; }
+  const d = {
+    id: 'local-' + Date.now(),
+    company: co,
+    stage: document.getElementById('an-stage').value,
+    gbu: document.getElementById('an-gbu').value,
+    fit: document.getElementById('an-fit').value,
+    geo: document.getElementById('an-geo').value,
+    rev: parseFloat(document.getElementById('an-rev').value)||0,
+    ebitda: parseFloat(document.getElementById('an-ebitda').value)||0,
+    ebitdaPct: '',
+    ownerType: document.getElementById('an-own').value,
+    owner: document.getElementById('an-owner').value,
+    keyContact: document.getElementById('an-contact').value,
+    industry: document.getElementById('an-ind').value,
+    source: document.getElementById('an-src').value,
+    nextSteps: document.getElementById('an-steps').value,
+    bankers:'', lastContact:'', nextFollowup:'',
+    actionable: false, valStatus:'Not Run', ddStatus:'Not Run', notionUrl:'',
+  };
+  DEALS.unshift(d);
+  renderAll();
+  closeAdd();
+  ['an-co','an-geo','an-rev','an-ebitda','an-owner','an-contact','an-ind','an-steps'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ════════════════════════════════════════════
+// SUMMARY
+// ════════════════════════════════════════════
+function buildSummary() {
+  const sc2={}, sr={}, gc={}, oc={}, fiveStars=[];
+  DEALS.forEach(d => {
+    sc2[d.stage]=(sc2[d.stage]||0)+1;
+    sr[d.stage]=(sr[d.stage]||0)+(d.rev||0);
+    gc[d.gbu]=(gc[d.gbu]||0)+1;
+    oc[d.ownerType]=(oc[d.ownerType]||0)+1;
+    if ((d.fit||'').length>=5) fiveStars.push(d);
+  });
+  const total = DEALS.length;
+  const SC = {'Active Discussion':'#c2410c','Reach-out':'#15803d','Prospect':'#2563eb','Monitor':'#4b5563','Closed':'#0f766e','Passed On':'#b91c1c'};
+  const GC = {'EA':'#1d4ed8','HHC':'#4c1d95','BAS':'#14532d'};
+  const OC = {'Family Owned':'#92700a','Private Equity':'#2563eb','Public':'#15803d','Private (Other)':'#4b5563','Partnership':'#6d28d9','Venture Capital':'#c2410c','Joint Venture':'#0f766e'};
+  const so = ['Active Discussion','Reach-out','Prospect','Monitor','Closed','Passed On'];
+
+  function bar(lbl, cnt, tot, color) {
+    const p = tot ? Math.round(cnt/tot*100) : 0;
+    return `<div class="br"><span class="br-lbl" style="color:${color}">${lbl}</span><div class="br-track"><div class="br-fill" style="width:${p}%;background:${color}"></div></div><span class="br-cnt">${cnt}</span></div>`;
+  }
+
+  document.getElementById('sum-wrap').innerHTML = `
+    <div class="sc">
+      <div class="sc-title">STAGE DISTRIBUTION</div>
+      ${so.map(s => bar(s, sc2[s]||0, total, SC[s]||'#888')).join('')}
+    </div>
+    <div class="sc">
+      <div class="sc-title">GBU BREAKDOWN</div>
+      ${['EA','HHC','BAS'].map(g => bar(g, gc[g]||0, total, GC[g])).join('')}
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gray100)">
+        <div class="sc-title" style="margin-bottom:8px">OWNERSHIP MIX</div>
+        ${Object.entries(oc).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([o,c]) => bar(o.replace('Private (Other)','Pvt (Other)'),c,total,OC[o]||'#888')).join('')}
+      </div>
+    </div>
+    <div class="sc">
+      <div class="sc-title">TOP ★★★★★ TARGETS</div>
+      ${fiveStars.slice(0,8).map(d => `<div class="top-r">
+        <div><div class="top-name">${esc(d.company)}</div><div class="top-meta">${d.geo} · ${d.gbu} · ${(d.ownerType||'').split('(')[0].trim()}</div></div>
+        <div style="text-align:right"><div style="color:#92700a;font-size:11px;letter-spacing:-1px">★★★★★</div><span class="sbadge ${sc(d.stage)}" style="font-size:9px">${d.stage}</span></div>
+      </div>`).join('')}
+      ${!fiveStars.length?'<div style="font-family:var(--mono);font-size:11px;color:var(--gray400)">Load data to see targets</div>':''}
+    </div>
+    <div class="sc full">
+      <div class="sc-title">REVENUE PIPELINE BY STAGE ($M)</div>
+      <div style="position:relative;width:100%;height:200px">
+        <canvas id="rc" role="img" aria-label="Revenue pipeline bar chart by stage"></canvas>
+      </div>
+    </div>`;
+
+  if (revChart) { revChart.destroy(); revChart = null; }
+  const ctx = document.getElementById('rc');
+  if (ctx) {
+    revChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: so,
+        datasets: [{
+          data: so.map(s => Math.round(sr[s]||0)),
+          backgroundColor: so.map(s => (SC[s]||'#888')+'bb'),
+          borderWidth: 0, borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#6b7280' }, grid: { display: false } },
+          y: { ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#6b7280', callback: v => '$'+v.toLocaleString()+'M' }, grid: { color: '#f3f4f6' } }
+        }
+      }
+    });
+  }
+}
+
+// ════════════════════════════════════════════
+// AGENT TASKS
+// ════════════════════════════════════════════
+const TASKS = [
+  {icon:'✉',title:'Draft outreach emails',desc:'Top Reach-out targets, matched to ownership type.',prompt:'Draft outreach emails for the top 5 Reach-out stage companies with ★★★★+ strategic fit. Prioritize family-owned targets first. Tailor tone to ownership type and geography. Keep each under 120 words.'},
+  {icon:'◉',title:'Weekly pipeline digest',desc:'Active deals, follow-ups, and top 3 priority actions.',prompt:"Generate this week's M&A pipeline digest. Cover: (1) Active Discussion deals and current status, (2) upcoming follow-ups ordered by date, (3) top 3 priority actions this week, (4) any stale deals needing immediate attention."},
+  {icon:'✓',title:'DD checklist (70-item)',desc:'Full checklist across all 8 categories.',prompt:'Generate a comprehensive 70-item due diligence checklist for a specialty adhesives M&A transaction. Organize across: Financial (12), Legal (10), Tax (8), Commercial (8), Operational (10), Technology (8), HR (8), Regulatory (6).'},
+  {icon:'$',title:'Valuation framework',desc:'Preliminary valuation memo for top Active Discussion target.',prompt:'Draft a preliminary valuation framework memo for Dalton Chemitac Group (top Active Discussion target). Revenue: $70M, EBITDA: $17.5M (25% margin), Brazil, Private. Cover: EV/EBITDA comparables, value drivers, deal structure, risks, suggested bid range.'},
+  {icon:'⬡',title:'NDA escalation list',desc:'Prospect/Reach-out deals ready for NDA with owner assignments.',prompt:'Review all Prospect and Reach-out stage deals and identify which are ready for NDA escalation. Prioritize by ★★★★+ fit and actionability. For each, suggest the deal owner and approach angle.'},
+  {icon:'⚑',title:'Competitive risk scan',desc:'Flag targets Henkel, Sika, Arkema, or Bostik may be pursuing.',prompt:'Analyze which tracked targets are at highest risk of acquisition by Henkel, Sika, Arkema, or Bostik before H.B. Fuller can close. Flag top 10 most at-risk with reasoning and urgency level.'},
+  {icon:'⌛',title:'Stale deal re-engagement',desc:'Monitor deals with no contact and suggested re-openers.',prompt:'Identify Monitor stage deals with no recorded last contact or follow-up. Surface top 10 most strategically valuable for re-engagement. For each, draft a one-line re-engagement opener.'},
+  {icon:'↗',title:'Custom instruction',desc:'IC memos, reranking, scenario analysis, anything.',prompt:''},
+];
+
+function buildTasks() {
+  document.getElementById('task-grid').innerHTML = TASKS.map((t,i) =>
+    `<div class="tc" onclick="runTask(${i})">
+      <div class="tc-icon">${t.icon}</div>
+      <div class="tc-title">${t.title}</div>
+      <div class="tc-desc">${t.desc}</div>
+    </div>`
+  ).join('');
+}
+
+function runTask(i) {
+  const t = TASKS[i];
+  if (!t.prompt) { document.getElementById('ci').focus(); return; }
+  document.getElementById('ci').value = t.prompt;
+  send();
+}
+
+function drawerTask(type) {
+  if (!sel) return;
+  const d = sel;
+  const pct = d.ebitdaPct || (d.rev && d.ebitda ? ((d.ebitda/d.rev)*100).toFixed(1)+'%' : '?');
+  const prompts = {
+    outreach: `Draft a warm outreach email for ${d.company}.\n\nContext: ${d.ownerType}, ${d.geo}, $${d.rev}M revenue, $${d.ebitda}M EBITDA, ${d.industry}. Fit: ${d.fit}. Key contact: ${d.keyContact||'TBD'}.\n\nStatus: ${d.nextSteps}\n\nTailor for ${d.ownerType} ownership. Under 120 words.`,
+    dd: `Generate a tailored DD checklist for ${d.company}.\n\nContext: ${d.ownerType}, ${d.geo}, $${d.rev}M revenue, ${d.industry}. Stage: ${d.stage}.\n\nCover all 8 categories. Flag special items for ${d.ownerType} ownership and ${d.geo} jurisdiction.`,
+    valuation: `Draft preliminary valuation memo for ${d.company}.\n\nRevenue: $${d.rev}M | EBITDA: $${d.ebitda}M | EBITDA %: ${pct} | ${d.ownerType} | ${d.geo} | ${d.industry}\n\nCover: EV/EBITDA comparables, value drivers, deal structure, key risks, suggested bid range.`,
+    ic: `Write a concise IC update note for ${d.company}.\n\nStage: ${d.stage} | Fit: ${d.fit} | GBU: ${d.gbu}\nRevenue: $${d.rev}M | EBITDA: $${d.ebitda}M | ${d.ownerType}\nDeal owner: ${d.owner||'unassigned'} | Last contact: ${d.lastContact||'not recorded'}\nNext steps: ${d.nextSteps}\n\nFormat: Executive Summary (2 sentences), Deal Status, Key Risks, Recommended Actions.`,
+    risk: `Assess competitive acquisition risk for ${d.company}.\n\n${d.ownerType}, ${d.geo}, $${d.rev}M, ${d.industry}. Stage: ${d.stage}.\n\nWhich competitors (Henkel, Sika, Arkema, Bostik) are likely to pursue this? Urgency level and recommended H.B. Fuller timeline.`,
+    nda: `Draft NDA send memo for ${d.company}.\n\n${d.ownerType}, ${d.geo}, Stage: ${d.stage}. Key contact: ${d.keyContact||'TBD'}.\nStatus: ${d.nextSteps}\n\nRationale for NDA at this stage, recommended approach, key terms, suggested timeline.`,
+  };
+  closeDrawer();
+  nav('agent');
+  document.getElementById('ci').value = prompts[type] || '';
+  send();
+}
+
+// ════════════════════════════════════════════
+// CHAT
+// ════════════════════════════════════════════
+let agentContext = '';
+
+function updateAgentContext() {
+  const active = DEALS.filter(d => ['Active Discussion','Reach-out','Prospect'].includes(d.stage));
+  const five = DEALS.filter(d => (d.fit||'').length >= 5);
+  agentContext = `Current pipeline has ${DEALS.length} companies total.
+
+ACTIVE DISCUSSION (${DEALS.filter(d=>d.stage==='Active Discussion').length} deals):
+${DEALS.filter(d=>d.stage==='Active Discussion').map(d=>`- ${d.company}: $${d.rev}M rev, ${d.geo}, ${d.ownerType}. Next: ${d.nextSteps}`).join('\n')}
+
+TOP ★★★★★ TARGETS (${five.length}):
+${five.map(d=>`- ${d.company}: $${d.rev}M, ${d.geo}, ${d.ownerType}, Stage: ${d.stage}`).join('\n')}
+
+ACTIVE PIPELINE SUMMARY (${active.length} deals):
+${active.slice(0,20).map(d=>`- ${d.company} [${d.stage}] $${d.rev}M ${d.geo} ${d.gbu} ${d.fit}`).join('\n')}`;
+}
+
+const SYS = `You are the M&A Deal Agent for H.B. Fuller's Corporate Development team ($3.8B specialty adhesives).
+
+GBUs: EA (Engineered Adhesives), HHC (Health Hygiene Consumer), BAS (Building Adhesives Solutions)
+Deal team: Kryzer Brendon, Ince Jacque, Perry Matt, Mastin Celeste, Tuso Joseph, Eichacker Chuck, Wickham Scot, Magalhaes Joao, Thomas Cheryl
+
+STRATEGIC FIT CRITERIA:
+★★★★★ Nearly Perfect — fills Top 20 Gap, critical IP/tech, immediate synergies, strong culture fit, strategic regions
+★★★★ Very Good — additive products, expands market access, moderate tech synergies, consolidation opportunity
+★★★ Acceptable/Niche — adjacent market, some relevance, complex integration, platform with investment
+★★ Limited — unrelated markets, heavy integration, minor synergies, mostly financial
+★ None — different industry, no overlap, dilutes focus
+
+LIVE PIPELINE CONTEXT:
+{{CONTEXT}}
+
+Respond as a sharp direct M&A advisor. Reference actual deal data. Use clear structure and bullets. Be concise but complete.`;
+
+function ck(e) { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); send(); } }
+
+async function send() {
+  const inp = document.getElementById('ci');
+  const btn = document.getElementById('cs');
+  const text = inp.value.trim();
+  if (!text) return;
+  const key = document.getElementById('api-key').value.trim() || apiKey;
+
+  inp.value = ''; btn.disabled = true;
+  chatHist.push({role:'user',content:text});
+  addMsg('user', text);
+
+  const tid = 't'+Date.now();
+  addMsgId('thinking','Analyzing pipeline…',tid);
+
+  if (!key) {
+    await new Promise(r=>setTimeout(r,400));
+    document.getElementById(tid)?.remove();
+    const demo = demoReply(text);
+    chatHist.push({role:'assistant',content:demo});
+    addMsg('agent', demo+'\n\n[Demo mode — add Anthropic API key for live responses]');
+    btn.disabled = false;
+    return;
+  }
+
+  const sysPrompt = SYS.replace('{{CONTEXT}}', agentContext || 'No data loaded — user should click Load Data button.');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:sysPrompt,messages:chatHist})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content?.[0]?.text || 'No response.';
+    chatHist.push({role:'assistant',content:reply});
+    document.getElementById(tid)?.remove();
+    addMsg('agent', reply);
+  } catch(e) {
+    document.getElementById(tid)?.remove();
+    addMsg('agent','API error: '+e.message+'\n\nCheck your Anthropic API key in the top bar.');
+  }
+  btn.disabled = false;
+}
+
+function addMsg(role, text) {
+  const msgs = document.getElementById('chat-msgs');
+  const d = document.createElement('div'); d.className = 'cm '+role;
+  d.innerHTML = `<div class="cm-role">${role==='user'?'YOU':'AGENT'}</div><div class="cm-body">${fmt(text)}</div>`;
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addMsgId(role, text, id) {
+  const msgs = document.getElementById('chat-msgs');
+  const d = document.createElement('div'); d.className='cm '+role; d.id=id;
+  d.innerHTML=`<div class="cm-role">AGENT</div><div class="cm-body blink">${esc(text)}</div>`;
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function clearChat() {
+  chatHist=[];
+  document.getElementById('chat-msgs').innerHTML='<div class="cm agent"><div class="cm-role">AGENT</div><div class="cm-body">Chat cleared. Ready for new instructions.</div></div>';
+}
+
+function demoReply(q) {
+  q = q.toLowerCase();
+  if (q.includes('outreach')||q.includes('email')) return `**Outreach drafts — top Reach-out targets:**\n\n**1. Chemence Inc. (Family, USA ★★★★★)**\n"James, I'm Jacque Ince from H.B. Fuller's Corporate Development team. Chemence's leadership in medical-grade cyanoacrylates aligns directly with our Health & Hygiene strategy. Would a brief conversation to explore strategic options make sense? Happy to meet at your convenience."\n\n**2. Mica Corporation (Family, USA ★★★★★)**\n"Jeff, Joseph Tuso here from H.B. Fuller. We admire Mica's position in water-based barrier coatings and see strong alignment with our flexible packaging portfolio. Looking forward to our May meeting."\n\n**3. omniTECHNIK (Freudenberg sub, Germany ★★★★★)**\nApproach via Freudenberg Corp Dev meeting already scheduled — use that as the entry point.`;
+  if (q.includes('digest')||q.includes('week')) return `**M&A Weekly Digest**\n\n**ACTIVE DISCUSSIONS**\n• Dalton Chemitac (Brazil $70M): Follow-up meeting due this month — owner 70yo, high conviction\n• NAKO Technology (China $8M): Site visit April 27 confirmed\n• Frimpeks Kimya (Turkey $200M): Carve-out discussion — David scheduling tolling trials\n• Nylok Brazil ($8M): NDA under redline review\n\n**TOP 3 ACTIONS THIS WEEK**\n1. Confirm NAKO site visit logistics\n2. Finalize Nylok NDA redlines\n3. Chemence LinkedIn outreach\n\n**UPCOMING FOLLOW-UPS**\n• Apr 30 — Frimpeks follow-up\n• May — Mica Corporation meeting\n• May 28 — Click Bond executive meeting`;
+  return `Demo mode active. Add your Anthropic API key in the top bar for live responses.\n\nI have full context on your pipeline and can help with:\n• Outreach drafts\n• DD checklists\n• Valuation memos\n• IC update notes\n• Competitive risk scans\n• Weekly pipeline digests\n• Custom analysis`;
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function showFit() { document.getElementById('fit-modal').classList.add('open'); }
+function closeFit() { document.getElementById('fit-modal').classList.remove('open'); }
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+function nav(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelector(`.tb-btn[onclick="nav('${name}')"]`).classList.add('active');
+  if (name==='summary') buildSummary();
+  if (name==='setup') {
+    const inp = document.getElementById('sp-url-input');
+    if (inp && spBaseUrl) inp.value = spBaseUrl;
+  }
+}
+
+// ════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmt(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*\n]+)\*/g,'<em>$1</em>')}
+</script>
+</body>
+</html>
