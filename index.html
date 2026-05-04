@@ -991,7 +991,8 @@ async function saveGaps(){
   }
 }
 
-
+// ── Valuation pane ──
+function buildValPane(d){
   if(!d.ebitda||d.ebitda<=0)return`<div style="text-align:center;padding:28px;color:var(--gray400);font-family:var(--mono);font-size:11px">No EBITDA data available.<br>Add EBITDA in the Fields tab to see valuation range.</div>`;
   const cons=(d.ebitda*8).toFixed(0),base=(d.ebitda*10).toFixed(0),prem=(d.ebitda*12).toFixed(0);
   const cR=d.rev?(d.ebitda*8/d.rev).toFixed(1)+'x rev':'',bR=d.rev?(d.ebitda*10/d.rev).toFixed(1)+'x rev':'',pR=d.rev?(d.ebitda*12/d.rev).toFixed(1)+'x rev':'';
