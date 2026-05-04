@@ -643,13 +643,27 @@ async function loadSheet(){
   setSyncStatus('load','LOADING…');
   const btn=document.getElementById('sync-btn'); btn.disabled=true;
   try{
+    console.log('Fetching:', SHEET_URL);
     const res=await fetch(SHEET_URL);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    DEALS=parseCSV(await res.text());
+    console.log('Response status:', res.status, res.statusText);
+    if(!res.ok) throw new Error('HTTP '+res.status+' '+res.statusText);
+    const text=await res.text();
+    console.log('CSV length:', text.length, 'First 200 chars:', text.slice(0,200));
+    if(!text||text.trim().length<10) throw new Error('Empty response from Google Sheets — check that the sheet is published as CSV');
+    DEALS=parseCSV(text);
+    console.log('Parsed deals:', DEALS.length, DEALS[0]);
+    if(DEALS.length===0) throw new Error('CSV parsed but 0 rows found — check column headers match exactly');
     setSyncStatus('ok','LIVE · '+DEALS.length+' deals');
     renderAll(); updateAgentCtx();
     toast('✓ Loaded '+DEALS.length+' companies');
-  }catch(e){setSyncStatus('err','ERROR');console.error('Sheet load error:',e);toast('Sheet load error: '+e.message)}
+  }catch(e){
+    setSyncStatus('err','ERROR: '+e.message);
+    console.error('Sheet load error:',e);
+    toast('❌ '+e.message);
+    // Show error on page
+    const tbody=document.getElementById('deal-tbody');
+    if(tbody) tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--red);font-family:var(--mono);font-size:11px">❌ Load error: ${esc(e.message)}<br><br>Open browser console (F12) for details.</td></tr>`;
+  }
   btn.disabled=false;
 }
 
