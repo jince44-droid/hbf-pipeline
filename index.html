@@ -1078,13 +1078,18 @@ function discardEdits(){
 function renderExec(){
   const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   document.getElementById('exec-date').textContent='H.B. Fuller Corporate Development · '+today;
-  const total=DEALS.length,active=DEALS.filter(d=>['Active Discussion','Reach-out','Prospect'].includes(d.stage));
+  const pipeline=DEALS.filter(d=>!['Passed On','Closed'].includes(d.stage));
+  const total=pipeline.length;
+  const active=DEALS.filter(d=>['Active Discussion','Reach-out','Prospect'].includes(d.stage));
   const disc=DEALS.filter(d=>d.stage==='Active Discussion').sort((a,b)=>(b.fitNum||0)-(a.fitNum||0));
   const act=DEALS.filter(d=>d.actionable).sort((a,b)=>(b.fitNum||0)-(a.fitNum||0));
   const f5=DEALS.filter(d=>d.fitNum>=5).sort((a,b)=>(b.rev||0)-(a.rev||0));
-  const tr=DEALS.reduce((s,d)=>s+(d.rev||0),0),te=DEALS.reduce((s,d)=>s+(d.ebitda||0),0);
-  const ar=DEALS.filter(d=>d.rev>0);const avgR=ar.length?tr/ar.length:0;
-  const gbuStats=['EA','HHC','BAS'].map(g=>{const list=DEALS.filter(d=>d.gbu===g);return{g,total:list.length,active:list.filter(d=>['Active Discussion','Reach-out','Prospect'].includes(d.stage)).length,f5:list.filter(d=>d.fitNum>=5).length,rev:list.reduce((s,d)=>s+(d.rev||0),0)};});
+  const tr=pipeline.reduce((s,d)=>s+(d.rev||0),0),te=pipeline.reduce((s,d)=>s+(d.ebitda||0),0);
+  const ar=pipeline.filter(d=>d.rev>0);const avgR=ar.length?tr/ar.length:0;
+  const gbuStats=['EA','HHC','BAS'].map(g=>{
+    const list=pipeline.filter(d=>d.gbu===g);
+    return{g,total:list.length,disc:list.filter(d=>d.stage==='Active Discussion').length,f5:list.filter(d=>d.fitNum>=5).length,rev:list.reduce((s,d)=>s+(d.rev||0),0)};
+  });
   function eRow(list,cols){return list.map(c=>'<tr style="border-bottom:1px solid var(--gray100)">'+cols.map(fn=>'<td style="padding:7px 10px">'+fn(c)+'</td>').join('')+'</tr>').join('');}
   const th=h=>`<th style="background:var(--navy);color:rgba(255,255,255,.6);font-size:9px;padding:7px 10px;text-align:left;font-family:var(--mono);letter-spacing:.04em">${h}</th>`;
   document.getElementById('exec-body').innerHTML=`
@@ -1092,7 +1097,7 @@ function renderExec(){
     <div class="exec-kpi-grid"><div class="exec-kpi"><div class="ev">${total}</div><div class="el">Total</div></div><div class="exec-kpi"><div class="ev">${active.length}</div><div class="el">Active</div></div><div class="exec-kpi"><div class="ev">${disc.length}</div><div class="el">In Discussion</div></div><div class="exec-kpi"><div class="ev">${act.length}</div><div class="el">Actionable</div></div><div class="exec-kpi"><div class="ev">${f5.length}</div><div class="el">★★★★★</div></div></div>
     <div class="exec-kpi-grid" style="grid-template-columns:repeat(3,1fr)"><div class="exec-kpi"><div class="ev">$${(tr/1000).toFixed(1)}B</div><div class="el">Pipeline Rev</div></div><div class="exec-kpi"><div class="ev">$${(te/1000).toFixed(2)}B</div><div class="el">Pipeline EBITDA</div></div><div class="exec-kpi"><div class="ev">$${avgR.toFixed(0)}M</div><div class="el">Avg Revenue</div></div></div>
     <div class="exec-sec">GBU Breakdown</div>
-    <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${['GBU','Total','Active','★★★★★','Pipeline Rev'].map(th).join('')}</tr></thead><tbody>${gbuStats.map(g=>`<tr style="border-bottom:1px solid var(--gray100)"><td style="padding:7px 10px">${gbuTag(g.g)}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.total}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.active}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.f5}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">$${g.rev.toLocaleString()}M</td></tr>`).join('')}</tbody></table>
+    <table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${['GBU','Total','Active Discussion','★★★★★','Pipeline Rev'].map(th).join('')}</tr></thead><tbody>${gbuStats.map(g=>`<tr style="border-bottom:1px solid var(--gray100)"><td style="padding:7px 10px">${gbuTag(g.g)}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.total}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.disc}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">${g.f5}</td><td style="padding:7px 10px;font-family:var(--mono);font-size:12px">$${g.rev.toLocaleString()}M</td></tr>`).join('')}</tbody></table>
     ${disc.length?`<div class="exec-sec">Active Discussions (${disc.length})</div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${['Company','GBU','Fit','Rev','EBITDA','Owner','Next Steps'].map(th).join('')}</tr></thead><tbody>${eRow(disc,[c=>`<strong>${esc(c.company)}</strong>`,c=>gbuTag(c.gbu),c=>starHtml(c.fitNum),c=>c.rev?'$'+c.rev.toLocaleString()+'M':'—',c=>c.ebitda?'$'+c.ebitda.toFixed(1)+'M':'—',c=>esc(c.owner||''),c=>`<span style="font-size:10px;max-width:180px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.nextSteps||'')}</span>`])}</tbody></table>`:''}
     ${act.length?`<div class="exec-sec">Actionable Targets (${act.length})</div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${['Company','Stage','GBU','Fit','Rev','Next Steps'].map(th).join('')}</tr></thead><tbody>${eRow(act,[c=>`<strong>${esc(c.company)}</strong>`,c=>stageBadge(c.stage),c=>gbuTag(c.gbu),c=>starHtml(c.fitNum),c=>c.rev?'$'+c.rev.toLocaleString()+'M':'—',c=>`<span style="font-size:10px">${esc(c.nextSteps||'')}</span>`])}</tbody></table>`:''}
     ${f5.length?`<div class="exec-sec">★★★★★ Targets (${f5.length})</div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${['Company','Stage','GBU','Rev','Ownership','HQ'].map(th).join('')}</tr></thead><tbody>${eRow(f5,[c=>`<strong>${esc(c.company)}</strong>`,c=>stageBadge(c.stage),c=>gbuTag(c.gbu),c=>c.rev?'$'+c.rev.toLocaleString()+'M':'—',c=>esc(c.ownerType||''),c=>esc(c.geo||'')])}</tbody></table>`:''}`;
