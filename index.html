@@ -877,6 +877,7 @@ function renderDrawer(){
       ${ff('bankers','Bankers','text',d.bankers)}
       ${ff('valStatus','Val Status','select',d.valStatus,['Not Run','Pending','Complete','Stale'])}
       ${ff('ddStatus','DD Status','select',d.ddStatus,['Not Run','Pending','Complete','Stale'])}
+      ${ff('actionable','Actionable Now','select',d.actionable?'Yes':'No',['Yes','No'])}
       ${ff('industry','Industry/Segment','text',d.industry)}
     </div>
     ${d.lastContact||d.nextFollowup?`<div class="sec-title">TIMELINE</div><div class="f-grid">${d.lastContact?ff('lastContact','Last Contact','date',d.lastContact):''}${d.nextFollowup?ff('nextFollowup','Next Follow-up','date',d.nextFollowup):''}</div>`:''}
@@ -963,7 +964,10 @@ function ff(key,label,type,value,opts){
 }
 
 function editField(key,val){
-  if(!sel)return;pendingEdits[key]=val;
+  if(!sel)return;
+  // Convert Yes/No dropdown to boolean for actionable
+  const converted = key==='actionable' ? (val==='Yes') : val;
+  pendingEdits[key]=converted;
   const pane=document.getElementById('dt-fields');
   if(!pane.querySelector('.unsaved')){const div=document.createElement('div');div.className='unsaved';div.innerHTML=`Unsaved changes<div class="unsaved-btns"><button class="discard-btn" onclick="discardEdits()">Discard</button><button class="save-btn" onclick="saveEdits()">Save to Sheet ↗</button></div>`;pane.insertBefore(div,pane.firstChild);}
 }
