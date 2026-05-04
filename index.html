@@ -307,6 +307,12 @@ table.dt tbody td:last-child{border-right:none}
 </head>
 <body>
 <div class="app">
+<style>
+.gaps-checklist{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+.gap-check{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:var(--r);border:1px solid var(--border);cursor:pointer;transition:all .12s;font-size:10px;font-family:var(--mono);background:var(--gray50)}
+.gap-check:hover{border-color:var(--accent);background:var(--accent-bg)}
+.gap-check.checked{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:600}
+</style>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
@@ -379,6 +385,7 @@ table.dt tbody td:last-child{border-right:none}
     <select id="sb-fit" onchange="applyFilters()" style="height:25px;padding:0 7px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-radius:var(--r)"><option value="">All Fit</option><option value="5">★★★★★</option><option value="4">★★★★+</option><option value="3">★★★+</option></select>
     <select id="sb-own" onchange="applyFilters()" style="height:25px;padding:0 7px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-radius:var(--r)"><option value="">All Ownership</option><option>Family Owned</option><option>Private Equity</option><option>Public</option><option>Private (Other)</option></select>
     <select id="sb-geo" onchange="applyFilters()" style="height:25px;padding:0 7px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-radius:var(--r)"><option value="">All Geo</option><option>USA</option><option>Germany</option><option>UK</option><option>France</option><option>Japan</option><option>China</option><option>Italy</option><option>Brazil</option><option>Turkey</option></select>
+    <select id="sb-ind" onchange="applyFilters()" style="height:25px;padding:0 7px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-radius:var(--r)"><option value="">All Industries</option><option>Electronics</option><option>Medical Device</option><option>Medical Surgical</option><option>Automotive</option><option>Aerospace</option><option>E-Power</option><option>I&amp;M</option><option>Roofing</option><option>ABS</option><option>Flex Pack</option><option>EOL Packaging</option><option>Fastener Coating</option><option>Bonding Agents</option><option>Beverage Label</option><option>Tapes &amp; Labels</option><option>BTRS</option></select>
     <select id="sb-act" onchange="applyFilters()" style="height:25px;padding:0 7px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);border-radius:var(--r)"><option value="">All</option><option value="yes">Actionable</option></select>
     <button class="btn btn-sm btn-outline" onclick="clearFilters()">Clear</button>
   </div>
@@ -536,12 +543,14 @@ table.dt tbody td:last-child{border-right:none}
   <div class="dr-tabs">
     <button class="dr-tab on" onclick="drTab(this,'dt-fields')">FIELDS</button>
     <button class="dr-tab" onclick="drTab(this,'dt-valuation')">VALUATION</button>
+    <button class="dr-tab" onclick="drTab(this,'dt-gaps')">GAPS</button>
     <button class="dr-tab" onclick="drTab(this,'dt-docs')">FILES</button>
     <button class="dr-tab" onclick="drTab(this,'dt-agent')">AGENT</button>
   </div>
   <div class="dr-body">
     <div class="dr-pane on" id="dt-fields"></div>
     <div class="dr-pane" id="dt-valuation"></div>
+    <div class="dr-pane" id="dt-gaps"></div>
     <div class="dr-pane" id="dt-docs"></div>
     <div class="dr-pane" id="dt-agent"></div>
   </div>
@@ -580,8 +589,8 @@ table.dt tbody td:last-child{border-right:none}
 // ════════════════════════════════════════════
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQY9kp0fTG-Fk3P5sQfg69dg0wPHofdLRwGY4QDPxu-Od3SNarQo3fexJpguwdGFNNFbbhyD8TaxNec/pub?gid=0&single=true&output=csv';
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAoqtUnGI5LaOtB6ggH12Z9EVOf_mvXJ71aJiU070EwvDplG76kkTNsZe6drPXdebU/exec';
-const COLS = {company:0,stage:1,gbu:2,fit:3,rev:4,ebitda:5,ebitdaPct:6,ownerType:7,geo:8,industry:9,owner:10,keyContact:11,bankers:12,lastContact:13,nextFollowup:14,actionable:15,nextSteps:16,valStatus:17,ddStatus:18,source:19,notionUrl:20};
-const HEADER_MAP = {company:'Company Name',stage:'Stage',gbu:'GBU',fit:'Strategic Fit',rev:'Revenue ($M)',ebitda:'EBITDA ($M)',ebitdaPct:'EBITDA %',ownerType:'Ownership Type',geo:'Geography',industry:'Industry/Segment',owner:'Deal Owner',keyContact:'Key Contact',bankers:'Bankers',lastContact:'Last Contact',nextFollowup:'Next Follow-up',actionable:'Actionable',nextSteps:'Next Steps',valStatus:'Val Status',ddStatus:'DD Status',source:'Deal Source'};
+const COLS = {company:0,stage:1,gbu:2,fit:3,rev:4,ebitda:5,ebitdaPct:6,ownerType:7,geo:8,industry:9,owner:10,keyContact:11,bankers:12,lastContact:13,nextFollowup:14,actionable:15,nextSteps:16,valStatus:17,ddStatus:18,source:19,notionUrl:20,gaps:21};
+const HEADER_MAP = {company:'Company Name',stage:'Stage',gbu:'GBU',fit:'Strategic Fit',rev:'Revenue ($M)',ebitda:'EBITDA ($M)',ebitdaPct:'EBITDA %',ownerType:'Ownership Type',geo:'Geography',industry:'Industry/Segment',owner:'Deal Owner',keyContact:'Key Contact',bankers:'Bankers',lastContact:'Last Contact',nextFollowup:'Next Follow-up',actionable:'Actionable',nextSteps:'Next Steps',valStatus:'Val Status',ddStatus:'DD Status',source:'Deal Source',gaps:'Gaps'};
 const STAGE_COLORS = {'Active Discussion':'#c2410c','Reach-out':'#15803d','Prospect':'#2563eb','Monitor':'#4b5563','Closed':'#0f766e','Passed On':'#b91c1c'};
 const GBU_COLORS = {'EA':'#1d4ed8','HHC':'#7c3aed','BAS':'#15803d'};
 const GAPS = ['ABS Geo/Commercial Exp.','ABS Geo/Expansion','ACS Consolidation','Adjacent Market Strategy','Aerospace Fly Away Products','Automotive Structural Sealants','BTRS MMA Adhesives','Beverage Label Commercial Exp.','Bonding Agents Commercial Exp.','Cross GBU Hybrid Sealants','EOL Packaging Consolidation','Electronics Commercial Exp.','Fastener Coating Geo/Comm Exp.','Flex Pack Geo Expansion','HHC Beauty Commercial Expansion','I&M Fire Rated & Corrosion','I&M Geographic Expansion','I&M Wraps & Tapes','Medical Adhesives Device','Medical Adhesives Surgical','Roofing Canisters','Roofing Commercial Expansion','e-Power Thermal Interface','Innovation Start-Up Tech'];
@@ -669,7 +678,7 @@ function parseCSV(text){
       rev:n('rev'),ebitda:n('ebitda'),ebitdaPct:g('ebitdaPct'),ownerType:g('ownerType'),geo:g('geo'),
       industry:g('industry'),owner:g('owner'),keyContact:g('keyContact'),bankers:g('bankers'),
       lastContact:g('lastContact'),nextFollowup:g('nextFollowup'),actionable:g('actionable').toLowerCase()==='yes',
-      nextSteps:g('nextSteps'),valStatus:g('valStatus'),ddStatus:g('ddStatus'),source:g('source'),notionUrl:g('notionUrl'),
+      nextSteps:g('nextSteps'),valStatus:g('valStatus'),ddStatus:g('ddStatus'),source:g('source'),notionUrl:g('notionUrl'),gaps:g('gaps'),
     };
   }).filter(d=>d.company);
 }
@@ -781,7 +790,7 @@ function buildPills(){
 }
 
 function setStage(s){stageFilter=s;buildPills();applyFilters();}
-function clearFilters(){['sb-q','sb-gbu','sb-fit','sb-own','sb-geo','sb-act'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});stageFilter='';buildPills();applyFilters();}
+function clearFilters(){['sb-q','sb-gbu','sb-fit','sb-own','sb-geo','sb-ind','sb-act'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});stageFilter='';buildPills();applyFilters();}
 function globalSearch(v){nav('pipeline');document.getElementById('sb-q').value=v;applyFilters();}
 function navActive(){nav('pipeline');setTimeout(()=>{stageFilter='Active Discussion';buildPills();applyFilters()},30);}
 
@@ -792,6 +801,7 @@ function applyFilters(){
   const own=document.getElementById('sb-own')?.value||'';
   const geo=document.getElementById('sb-geo')?.value||'';
   const act=document.getElementById('sb-act')?.value||'';
+  const ind=document.getElementById('sb-ind')?.value||'';
   filtered=DEALS.filter(d=>{
     if(stageFilter&&d.stage!==stageFilter)return false;
     if(gbu&&d.gbu!==gbu)return false;
@@ -799,6 +809,7 @@ function applyFilters(){
     if(own&&d.ownerType!==own)return false;
     if(fitMin&&d.fitNum<fitMin)return false;
     if(act==='yes'&&!d.actionable)return false;
+    if(ind&&!(d.industry||'').toLowerCase().includes(ind.toLowerCase()))return false;
     if(q){const h=[d.company,d.owner,d.industry,d.nextSteps,d.keyContact,d.geo].join(' ').toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
@@ -808,9 +819,10 @@ function applyFilters(){
 
 function sortBy(k){sortKey===k?sortAsc=!sortAsc:(sortKey=k,sortAsc=true);applyFilters();}
 
+const SP_BASE = 'https://hbfuller.sharepoint.com/sites/MATop20TechnologyGaps-CompanyProfiles/Shared%20Documents/Company%20Profiles/Company%20Profiles';
+
 function spUrl(company){
-  const base=spBaseUrl||localStorage.getItem('hbf-sp-url')||'';
-  return base?base.replace(/\/$/,'')+'/'+encodeURIComponent(company):null;
+  return SP_BASE + '/' + encodeURIComponent(company);
 }
 
 function renderTable(){
@@ -888,6 +900,9 @@ function renderDrawer(){
   // VALUATION PANE
   document.getElementById('dt-valuation').innerHTML=buildValPane(d);
 
+  // GAPS PANE
+  renderGapsPane(d);
+
   // DOCS PANE
   const url=spUrl(d.company);
   document.getElementById('dt-docs').innerHTML=`
@@ -911,8 +926,58 @@ function renderDrawer(){
     </div>`;
 }
 
-// ── Valuation pane ──
-function buildValPane(d){
+// ── Gaps checklist pane ──
+function renderGapsPane(d){
+  const selected = new Set((d.gaps||'').split('|').filter(Boolean));
+  const html = `
+    <div class="sec-title">TOP 20 STRATEGIC GAPS — select all that apply</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--gray400);margin-bottom:10px;line-height:1.5">Tag which strategic gaps this company fills. Changes save to Google Sheet.</div>
+    <div class="gaps-checklist" id="gaps-checklist">
+      ${GAPS.map(g => {
+        const checked = selected.has(g);
+        return `<div class="gap-check${checked?' checked':''}" onclick="toggleGap('${g.replace(/'/g,"\\'")}',this)" title="${g}">
+          <span style="font-size:11px">${checked?'✓':'○'}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="save-btn" style="height:26px;padding:0 12px;font-size:10px" onclick="saveGaps()">Save Gaps to Sheet ↗</button>
+      <span id="gaps-save-msg" style="font-family:var(--mono);font-size:10px;color:var(--green);display:none">✓ Saved</span>
+    </div>
+    <div style="margin-top:10px;font-family:var(--mono);font-size:9px;color:var(--gray400)">ⓘ Gaps are stored in the "Gaps" column of your Google Sheet</div>`;
+  document.getElementById('dt-gaps').innerHTML = html;
+}
+
+function toggleGap(gap, el){
+  if(!sel) return;
+  const selected = new Set((sel.gaps||'').split('|').filter(Boolean));
+  if(selected.has(gap)){selected.delete(gap);el.classList.remove('checked');el.querySelector('span').textContent='○';}
+  else{selected.add(gap);el.classList.add('checked');el.querySelector('span').textContent='✓';}
+  sel.gaps = [...selected].join('|');
+  const idx = DEALS.findIndex(d=>d.id===sel.id);
+  if(idx>=0) DEALS[idx].gaps = sel.gaps;
+}
+
+async function saveGaps(){
+  if(!sel) return;
+  const btn = document.querySelector('#dt-gaps .save-btn');
+  const msg = document.getElementById('gaps-save-msg');
+  if(btn){btn.textContent='Saving…';btn.disabled=true;}
+  try{
+    const idx = DEALS.findIndex(d=>d.id===sel.id);
+    const rowIndex = (idx>=0?idx:0)+2;
+    await saveToSheet(rowIndex, {gaps: sel.gaps||''});
+    if(btn){btn.textContent='Save Gaps to Sheet ↗';btn.disabled=false;}
+    if(msg){msg.style.display='inline';setTimeout(()=>msg.style.display='none',2500);}
+    toast('✓ Gaps saved for '+sel.company);
+  }catch(e){
+    if(btn){btn.textContent='Save Gaps to Sheet ↗';btn.disabled=false;}
+    toast('Save error: '+e.message);
+  }
+}
+
+
   if(!d.ebitda||d.ebitda<=0)return`<div style="text-align:center;padding:28px;color:var(--gray400);font-family:var(--mono);font-size:11px">No EBITDA data available.<br>Add EBITDA in the Fields tab to see valuation range.</div>`;
   const cons=(d.ebitda*8).toFixed(0),base=(d.ebitda*10).toFixed(0),prem=(d.ebitda*12).toFixed(0);
   const cR=d.rev?(d.ebitda*8/d.rev).toFixed(1)+'x rev':'',bR=d.rev?(d.ebitda*10/d.rev).toFixed(1)+'x rev':'',pR=d.rev?(d.ebitda*12/d.rev).toFixed(1)+'x rev':'';
